@@ -1,0 +1,10 @@
+@extends('layouts.app')
+@section('title', 'System health')
+@section('content')
+    <x-page-heading title="System health" description="Worker and runtime telemetry for the TalentFlow platform." />
+    <section class="card health-intro"><div class="health-symbol"><x-icon name="activity" /></div><x-badge value="Not configured" /><h2>Worker telemetry is not connected</h2><p>The Python worker layer does not yet publish heartbeat, queue or provider health records. Runtime health cannot be determined from the available data.</p></section>
+    <div class="equal-grid">
+        <section class="card"><div class="card-heading"><h2>Required runtime signals</h2></div><ul class="contract-list"><li><x-icon name="activity" /><div><strong>Worker heartbeats</strong><p>Worker identity, version, observed timestamp and current capacity.</p></div></li><li><x-icon name="briefcase" /><div><strong>Execution attempts</strong><p>Job identity, state, start and finish times, retries and a safe error code.</p></div></li><li><x-icon name="interview" /><div><strong>Interview connections</strong><p>Session identity, last heartbeat and recorded connection quality.</p></div></li><li><x-icon name="coins" /><div><strong>Provider operations</strong><p>Provider and model, outcome, duration, token counts and cost provenance.</p></div></li></ul></section>
+        <section class="card"><div class="card-heading"><h2>Available platform evidence</h2></div><div class="available-evidence"><p>Inspect the records already persisted by the platform while runtime instrumentation is being implemented.</p><a href="{{ route('interviews.index') }}"><span><x-icon name="interview" />Interview workflow states</span><x-icon name="arrow" /></a><a href="{{ route('usage.index') }}"><span><x-icon name="coins" />Recorded token consumption</span><x-icon name="arrow" /></a><a href="{{ route('security.index') }}"><span><x-icon name="shield" />Integrity and authentication events</span><x-icon name="arrow" /></a><a href="{{ route('settings') }}"><span><x-icon name="settings" />Server configuration status</span><x-icon name="arrow" /></a></div></section>
+    </div>
+@endsection

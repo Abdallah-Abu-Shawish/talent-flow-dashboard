@@ -1,0 +1,8 @@
+@extends('layouts.app')
+@section('title', 'Settings')
+@section('content')
+    <x-page-heading title="Settings & integrations" description="Safe visibility into the dashboard’s server configuration." />
+    <div class="alert alert-info"><x-icon name="info" /><span>Configuration presence does not verify connectivity or provider health. Credentials are managed on the server.</span></div>
+    <section class="card"><div class="card-heading"><div><h2>Integration configuration</h2><p>Values and credentials are never displayed</p></div><span class="overline">READ ONLY</span></div><div class="integration-list">@forelse($integrations as $integration)<article class="integration"><span class="integration-icon"><x-icon name="{{ str_contains(strtolower($integration['name']), 'supabase') ? 'building' : 'settings' }}" /></span><div class="integration-description"><h3>{{ $integration['name'] }}</h3><p>{{ $integration['description'] }}</p></div><x-badge :value="$integration['configured'] ? 'Configured' : 'Not configured'" /></article>@empty<x-empty-state title="No integrations configured" description="Integration configuration has not been provided to this dashboard." icon="settings" />@endforelse</div></section>
+    <section class="card settings-access"><span class="aside-icon"><x-icon name="lock" /></span><div><h2>Super-admin access</h2><p>Dashboard access is checked against the authenticated Supabase identity and current profile role on each request.</p></div><a href="{{ route('security.index') }}" class="button button-secondary">Security events<x-icon name="arrow" /></a></section>
+@endsection

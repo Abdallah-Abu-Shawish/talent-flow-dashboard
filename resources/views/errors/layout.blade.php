@@ -1,0 +1,3 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>@yield('title') · TalentFlow AI</title>@vite(['resources/css/app.css', 'resources/js/app.js'])</head>
+<body class="error-body"><main class="error-card"><span class="brand-symbol"><x-icon name="brand" /></span><p class="error-code">@yield('code')</p><h1>@yield('title')</h1><p>@yield('message')</p><div class="error-actions"><a class="button button-primary" href="{{ url('/') }}">Return to dashboard<x-icon name="arrow" /></a><a class="button button-secondary" href="{{ url('/login') }}">Sign in</a></div><small>TalentFlow AI · System Dashboard</small></main></body></html>
