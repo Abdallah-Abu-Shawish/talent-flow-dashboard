@@ -1,6 +1,6 @@
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    listen 8080 default_server;
+    listen [::]:8080 default_server;
 
     # Set Laravel public directory as Nginx document root
     root /home/site/wwwroot/public;
