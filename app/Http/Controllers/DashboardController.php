@@ -24,18 +24,28 @@ final class DashboardController extends Controller
         return view('dashboard.show', ['detail' => $presenter->detail($module, $id, $request->session()->get('admin.access_token'))]);
     }
 
-    public function overview(Request $request, DashboardRepository $repository, DashboardPresenter $presenter): mixed
-    {
-        $filters = DashboardFilters::fromRequest($request, DashboardModules::get('usage'), true);
-        $token = $request->session()->get('admin.access_token');
-        $recent = $presenter->table('usage', array_replace($filters, ['page' => 1, 'per_page' => 5, 'sort' => 'tokens_used', 'direction' => 'desc']), $token);
-        $recent['filterFields'] = [];
-        $recent['tabs'] = [];
-        $recent['collectionUrl'] = route('usage.index', $filters);
-        $recent['title'] = 'Largest recorded token debits';
-        $recent['paginator'] = new \Illuminate\Pagination\LengthAwarePaginator($recent['rows'], count($recent['rows']), 5);
-        return view('dashboard.overview', ['summary' => $repository->summary($filters, $token), 'filters' => $filters, 'recentTable' => $recent]);
-    }
+    public function overview(
+    Request $request,
+    DashboardRepository $repository
+): mixed {
+    $filters = DashboardFilters::fromRequest(
+        $request,
+        DashboardModules::get('usage'),
+        true
+    );
+
+    $token = $request
+        ->session()
+        ->get('admin.access_token');
+
+    return view('dashboard.overview', [
+        'summary' => $repository->summary(
+            $filters,
+            $token
+        ),
+        'filters' => $filters,
+    ]);
+}
 
     public function usage(Request $request, DashboardRepository $repository, DashboardPresenter $presenter): mixed
     {

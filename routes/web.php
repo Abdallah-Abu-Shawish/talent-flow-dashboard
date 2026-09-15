@@ -6,6 +6,7 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserAdminController;
 
 Route::middleware([SecurityHeaders::class])->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
@@ -44,6 +45,44 @@ Route::middleware([SecurityHeaders::class])->group(function () {
                 ->defaults('module', $module)
                 ->name("{$path}.index");
         }
+        // =========================================================
+// USER ADMINISTRATION
+// =========================================================
+
+Route::get(
+    '/users/{id}/edit',
+    [UserAdminController::class, 'edit']
+)->name('users.edit');
+
+Route::patch(
+    '/users/{id}',
+    [UserAdminController::class, 'update']
+)->name('users.update');
+
+Route::post(
+    '/users/{id}/password',
+    [UserAdminController::class, 'setPassword']
+)->name('users.password');
+
+Route::post(
+    '/users/{id}/password-reset',
+    [UserAdminController::class, 'sendPasswordReset']
+)->name('users.password-reset');
+
+Route::post(
+    '/users/{id}/membership',
+    [UserAdminController::class, 'saveMembership']
+)->name('users.membership.store');
+
+Route::delete(
+    '/users/{id}/membership/{membershipId}',
+    [UserAdminController::class, 'removeMembership']
+)->name('users.membership.destroy');
+
+Route::delete(
+    '/users/{id}',
+    [UserAdminController::class, 'destroy']
+)->name('users.destroy');
 
         Route::get('/organizations/{id}', [DashboardController::class, 'show'])
             ->defaults('module', 'organizations')

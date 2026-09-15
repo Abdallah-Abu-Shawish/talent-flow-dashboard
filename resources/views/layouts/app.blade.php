@@ -262,15 +262,7 @@
                         <x-icon name="refresh" />
                     </button>
 
-                    <button
-                        class="icon-button"
-                        type="button"
-                        data-theme-toggle
-                        aria-label="Switch to dark theme"
-                        title="Switch theme"
-                    >
-                        <x-icon name="moon" />
-                    </button>
+                    
 
                 </div>
 

@@ -16,13 +16,44 @@ final class DashboardModules
                 'sorts' => ['created_at' => 'Newest', 'name' => 'Name', 'token_balance' => 'Token balance'],
             ],
             'users' => [
-                'table' => 'profiles', 'title' => 'Users & Access',
-                'description' => 'Global identities. Open a profile to inspect its separate organization memberships.',
-                'select' => 'id,full_name,role,created_at',
-                'search' => 'full_name', 'statuses' => ['candidate', 'super_admin'], 'statusField' => 'role',
-                'columns' => ['full_name' => 'User', 'id' => 'User ID', 'role' => 'Global role', 'created_at' => 'Created'],
-                'sorts' => ['created_at' => 'Newest', 'full_name' => 'Name'],
-            ],
+    'table' => 'profiles',
+
+    'title' => 'Users & Access',
+
+    'description' => 'Manage users, profile information and platform access.',
+
+    'select' => 'id,email,full_name,phone_number,role,created_at,updated_at',
+
+    'search' => [
+        'full_name',
+        'email',
+        'phone_number',
+    ],
+
+    'searchLabel' => 'Search name, email or phone',
+
+    'statuses' => [
+        'candidate',
+        'super_admin',
+    ],
+
+    'statusField' => 'role',
+
+    'columns' => [
+        'full_name' => 'User',
+        'email' => 'Email',
+        'phone_number' => 'Phone',
+        'role' => 'Role',
+        'created_at' => 'Created',
+    ],
+
+    'sorts' => [
+        'created_at' => 'Newest',
+        'full_name' => 'Name',
+        'email' => 'Email',
+    ],
+],
+
             'jobs' => [
                 'table' => 'job_postings', 'title' => 'Jobs',
                 'description' => 'Platform job inspection with linked interviews and candidate identities.',

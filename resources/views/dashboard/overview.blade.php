@@ -1,20 +1,241 @@
 @extends('layouts.app')
-@section('title', 'Platform overview')
+
+@section('title', 'Overview')
+
 @section('content')
-    <x-page-heading title="Platform overview" description="Organizations, interview activity and recorded token consumption.">
-        <a class="button button-secondary" href="{{ route('usage.index', $filters) }}">Explore usage<x-icon name="arrow" /></a>
-    </x-page-heading>
-    <x-date-filters :filters="$filters" :action="route('overview')" />
-    <div class="metrics-grid">
-        <x-metric label="Organizations" :value="$summary['organizations'] ?? null" icon="building" :url="route('organizations.index')" note="Platform total · all time" />
-        <x-metric label="Users" :value="$summary['users'] ?? null" icon="users" :url="route('users.index')" note="Platform total · all time" />
-        <x-metric label="Interviews" :value="$summary['interviews'] ?? null" icon="interview" :url="route('interviews.index')" note="Created in selected period" />
-        <x-metric label="Tokens consumed" :value="$summary['tokens'] ?? null" icon="coins" :url="route('usage.index', $filters)" note="Persisted token debits" :accent="true" />
+
+    <section class="overview-header">
+        <div>
+            <span class="overview-eyebrow">
+                TALENTFLOW AI
+            </span>
+
+            <h1>
+                Welcome to your dashboard
+            </h1>
+
+            <p>
+                A simple overview of your platform,
+                users and AI interviews.
+            </p>
+        </div>
+
+        <a
+            class="overview-primary-action"
+            href="{{ route('usage.index', $filters) }}"
+        >
+            View usage
+            <x-icon name="arrow" />
+        </a>
+    </section>
+
+
+    <x-date-filters
+        :filters="$filters"
+        :action="route('overview')"
+    />
+
+
+    <div class="overview-metrics">
+
+        <a
+            href="{{ route('organizations.index') }}"
+            class="overview-metric"
+        >
+            <div class="overview-metric-icon">
+                <x-icon name="building" />
+            </div>
+
+            <div>
+                <span>Organizations</span>
+
+                <strong>
+                    {{
+                        isset($summary['organizations'])
+                            ? number_format($summary['organizations'])
+                            : '—'
+                    }}
+                </strong>
+
+                <small>
+                    Total organizations
+                </small>
+            </div>
+        </a>
+
+
+        <a
+            href="{{ route('users.index') }}"
+            class="overview-metric"
+        >
+            <div class="overview-metric-icon">
+                <x-icon name="users" />
+            </div>
+
+            <div>
+                <span>Users</span>
+
+                <strong>
+                    {{
+                        isset($summary['users'])
+                            ? number_format($summary['users'])
+                            : '—'
+                    }}
+                </strong>
+
+                <small>
+                    Registered users
+                </small>
+            </div>
+        </a>
+
+
+        <a
+            href="{{ route('interviews.index') }}"
+            class="overview-metric"
+        >
+            <div class="overview-metric-icon">
+                <x-icon name="interview" />
+            </div>
+
+            <div>
+                <span>AI Interviews</span>
+
+                <strong>
+                    {{
+                        isset($summary['interviews'])
+                            ? number_format($summary['interviews'])
+                            : '—'
+                    }}
+                </strong>
+
+                <small>
+                    Selected period
+                </small>
+            </div>
+        </a>
+
+
+        <a
+            href="{{ route('usage.index', $filters) }}"
+            class="overview-metric"
+        >
+            <div class="overview-metric-icon overview-metric-icon-cyan">
+                <x-icon name="coins" />
+            </div>
+
+            <div>
+                <span>Tokens Used</span>
+
+                <strong>
+                    {{
+                        isset($summary['tokens'])
+                            ? number_format($summary['tokens'])
+                            : '—'
+                    }}
+                </strong>
+
+                <small>
+                    AI token consumption
+                </small>
+            </div>
+        </a>
+
     </div>
-    <div class="analytics-grid"><x-usage-chart :daily="$summary['daily'] ?? []" /><x-usage-breakdown :rows="$summary['by_service'] ?? []" title="Usage by service" label-key="service" description="Recorded token attribution" /></div>
-    <div class="operational-grid">
-        <section class="card activity-card"><div class="card-heading"><div><h2>Interview activity</h2><p>Persisted workflow and integrity records</p></div><x-icon name="interview" /></div><dl class="activity-stats"><div><dt>Completed <small>Created in period</small></dt><dd>{{ isset($summary['completed']) ? number_format($summary['completed']) : '—' }}</dd></div><div><dt>In progress <small>Current · all time</small></dt><dd>{{ isset($summary['in_progress']) ? number_format($summary['in_progress']) : '—' }}</dd></div><div><dt>Integrity events <small>Selected period</small></dt><dd>{{ isset($summary['integrity_events']) ? number_format($summary['integrity_events']) : '—' }}</dd></div></dl><div class="card-bottom"><span>Workflow status does not verify a live connection.</span><a href="{{ route('interviews.index') }}">View interviews<x-icon name="arrow" /></a></div></section>
-        <section class="card telemetry-card"><span class="telemetry-icon"><x-icon name="activity" /></span><div><h2>Worker telemetry</h2><p>Worker heartbeats and queue metrics are not yet connected.</p><a href="{{ route('health') }}">View system health<x-icon name="arrow" /></a></div></section>
+
+
+    <div class="overview-analytics">
+
+        <x-usage-chart
+            :daily="$summary['daily'] ?? []"
+        />
+
+        <x-usage-breakdown
+            :rows="$summary['by_service'] ?? []"
+            title="Usage by service"
+            label-key="service"
+            description="AI services consumption"
+        />
+
     </div>
-    <x-data-table :table="$recentTable" />
+
+
+    <section class="overview-interviews">
+
+        <div class="overview-section-title">
+
+            <div>
+                <h2>
+                    Interview activity
+                </h2>
+
+                <p>
+                    Current AI interview activity
+                </p>
+            </div>
+
+            <a href="{{ route('interviews.index') }}">
+                View all
+                <x-icon name="arrow" />
+            </a>
+
+        </div>
+
+
+        <div class="overview-activity-grid">
+
+            <div>
+                <span>Completed</span>
+
+                <strong>
+                    {{
+                        isset($summary['completed'])
+                            ? number_format($summary['completed'])
+                            : '—'
+                    }}
+                </strong>
+
+                <small>
+                    Completed interviews
+                </small>
+            </div>
+
+
+            <div>
+                <span>In progress</span>
+
+                <strong>
+                    {{
+                        isset($summary['in_progress'])
+                            ? number_format($summary['in_progress'])
+                            : '—'
+                    }}
+                </strong>
+
+                <small>
+                    Active interviews
+                </small>
+            </div>
+
+
+            <div>
+                <span>Integrity events</span>
+
+                <strong>
+                    {{
+                        isset($summary['integrity_events'])
+                            ? number_format($summary['integrity_events'])
+                            : '—'
+                    }}
+                </strong>
+
+                <small>
+                    Selected period
+                </small>
+            </div>
+
+        </div>
+
+    </section>
+
 @endsection

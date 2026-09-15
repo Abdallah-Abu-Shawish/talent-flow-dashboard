@@ -24,10 +24,31 @@ final class DashboardRepository
             'order' => $sort.'.'.$direction.',id.'.$direction,
         ];
         if (! empty($filters['q']) && isset($definition['search'])) {
-            // Single-field filter: no PostgREST boolean grammar is concatenated from user input.
-            $literal = str_replace(['\\', '%', '_', '*'], ['\\\\', '\\%', '\\_', '\\*'], $filters['q']);
-            $query[$definition['search']] = 'ilike.%'.$literal.'%';
+    $searchFields = (array) $definition['search'];
+
+    // Keep normal name/email/phone characters only.
+    $literal = preg_replace(
+        '/[^\p{L}\p{N}@._+\-\s]/u',
+        '',
+        trim((string) $filters['q'])
+    );
+
+    if ($literal !== '') {
+        if (count($searchFields) === 1) {
+            $query[$searchFields[0]] =
+                'ilike.*'.$literal.'*';
+        } else {
+            $expressions = array_map(
+                fn (string $field) =>
+                    $field.'.ilike.*'.$literal.'*',
+                $searchFields
+            );
+
+            $query['or'] =
+                '('.implode(',', $expressions).')';
         }
+    }
+}
         if (isset($definition['statusField'], $filters[$definition['statusField']])) {
             $query[$definition['statusField']] = 'eq.'.$filters[$definition['statusField']];
         }
@@ -129,4 +150,11 @@ final class DashboardRepository
             'p_expected_updated_at' => $data['expected_updated_at'] ?? null, 'p_reason' => $data['reason'],
         ], $token);
     }
+
+public function authUser(string $id): array
+{
+    return $this->client->adminGetUser($id);
+}
+
+
 }

@@ -1,13 +1,10 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <meta name="color-scheme" content="light dark">
+    <meta name="color-scheme" content="light">
 
     <title>Sign in · TalentFlow AI</title>
 
@@ -22,237 +19,257 @@
 
 <body class="auth-body">
 
-    <div class="auth-layout">
+<div class="auth-layout auth-layout-clean">
 
-        <aside class="auth-brand-panel">
+    <!-- LEFT SIDE -->
+    <aside class="auth-brand-panel auth-brand-panel-clean">
 
-            <!-- Brand -->
-            <div class="brand">
+        <div class="auth-side-brand">
 
-                <span class="brand-symbol">
-                    <img
-                        src="{{ asset('images/logo.png') }}"
-                        alt="TalentFlow AI"
-                        class="auth-brand-logo"
-                    >
-                </span>
+            <img
+                src="{{ asset('images/logo2.png') }}"
+                alt="TalentFlow AI"
+                class="auth-side-logo"
+            >
 
-                <span class="brand-copy">
-                    <strong>
-                        TalentFlow <span>AI</span>
-                    </strong>
+            <div>
+                <strong>
+                    TalentFlow <span>AI</span>
+                </strong>
 
-                    <small>
-                        Admin Console
-                    </small>
-                </span>
-
+                <small>
+                    Admin Console
+                </small>
             </div>
 
-         
-            <!-- Intro -->
-            <div class="auth-intro">
+        </div>
 
-                <span class="eyebrow">
-                    PLATFORM ADMINISTRATION
-                </span>
 
-                <h1>
-                    A clearer view of<br>
-                    your interview platform.
-                </h1>
+        <div class="auth-intro-clean">
 
-                <p>
-                    One workspace for organizations,
-                    interview operations and accountable administration.
-                </p>
+            <span class="auth-small-label">
+                TALENTFLOW AI
+            </span>
 
-                <div class="auth-capabilities">
+            <h1>
+                Hire smarter.<br>
+                Decide faster.
+            </h1>
 
-                    <span>
+            <p>
+                Manage your TalentFlow AI platform from one
+                simple and secure workspace.
+            </p>
+
+
+            <div class="auth-features">
+
+                <div class="auth-feature">
+                    <span class="auth-feature-icon">
                         <x-icon name="building" />
-                        Organization oversight
                     </span>
 
-                    <span>
+                    <div>
+                        <strong>Organizations</strong>
+                        <small>
+                            Manage companies and platform access
+                        </small>
+                    </div>
+                </div>
+
+
+                <div class="auth-feature">
+                    <span class="auth-feature-icon">
+                        <x-icon name="interview" />
+                    </span>
+
+                    <div>
+                        <strong>AI Interviews</strong>
+                        <small>
+                            Monitor interview activity
+                        </small>
+                    </div>
+                </div>
+
+
+                <div class="auth-feature">
+                    <span class="auth-feature-icon">
                         <x-icon name="activity" />
-                        Recorded platform activity
                     </span>
 
-                    <span>
-                        <x-icon name="shield" />
-                        Auditable administration
-                    </span>
-
+                    <div>
+                        <strong>Platform Insights</strong>
+                        <small>
+                            Track usage and system activity
+                        </small>
+                    </div>
                 </div>
 
             </div>
 
-            <div class="auth-panel-footer">
-                <x-icon name="lock" />
+        </div>
 
-                <span>
-                    Restricted to authorized super administrators
-                </span>
+
+        <div class="auth-panel-footer-clean">
+            <x-icon name="shield" />
+
+            <span>
+                Secure access for authorized administrators
+            </span>
+        </div>
+
+    </aside>
+
+
+    <!-- RIGHT SIDE -->
+    <main class="auth-main auth-main-clean" id="main-content">
+
+        <div class="login-card login-card-clean">
+
+            <div class="login-logo-mobile">
+                <img
+                    src="{{ asset('images/logo.png') }}"
+                    alt="TalentFlow AI"
+                >
             </div>
 
-        </aside>
 
-        <main
-            class="auth-main"
-            id="main-content"
-        >
+            <span class="login-badge">
+                ADMIN PORTAL
+            </span>
 
-            <button
-                class="icon-button auth-theme"
-                type="button"
-                data-theme-toggle
-                aria-label="Switch to dark theme"
-                title="Switch theme"
+            <h2>
+                Welcome back
+            </h2>
+
+            <p class="login-description">
+                Sign in to continue to your administrator dashboard.
+            </p>
+
+
+            <x-feedback />
+
+
+            @if(!$configured)
+                <div
+                    class="alert alert-warning"
+                    role="status"
+                >
+                    <x-icon name="info" />
+
+                    <span>
+                        Dashboard authentication is not configured.
+                        Ask your system administrator to configure
+                        the Supabase connection.
+                    </span>
+                </div>
+            @endif
+
+
+            <form
+                method="POST"
+                action="{{ route('login.store') }}"
+                data-loading-form
             >
-                <x-icon name="moon" />
-            </button>
+                @csrf
 
-            <div class="login-card">
+                <div class="form-field">
 
-                <span class="login-symbol">
-                    <x-icon name="lock" />
-                </span>
+                    <label for="email">
+                        Email address
+                    </label>
 
-                <h2>
-                    Welcome back
-                </h2>
-
-                <p class="login-description">
-                    Sign in to your administrator workspace.
-                </p>
-
-                <x-feedback />
-
-                @if(!$configured)
-
-                    <div
-                        class="alert alert-warning"
-                        role="status"
+                    <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value="{{ old('email') }}"
+                        placeholder="you@example.com"
+                        autocomplete="username"
+                        maxlength="254"
+                        required
+                        autofocus
+                        @disabled(!$configured)
+                        @error('email')
+                            aria-invalid="true"
+                        @enderror
                     >
 
-                        <x-icon name="info" />
+                </div>
 
-                        <span>
-                            Dashboard authentication is not configured.
-                            Ask your system administrator to configure
-                            the Supabase connection.
-                        </span>
 
-                    </div>
+                <div class="form-field">
 
-                @endif
+                    <label for="password">
+                        Password
+                    </label>
 
-                <form
-                    method="POST"
-                    action="{{ route('login.store') }}"
-                    data-loading-form
-                >
-
-                    @csrf
-
-                    <div class="form-field">
-
-                        <label for="email">
-                            Email address
-                        </label>
+                    <div class="password-input">
 
                         <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            value="{{ old('email') }}"
-                            autocomplete="username"
-                            maxlength="254"
+                            id="password"
+                            name="password"
+                            type="password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
                             required
-                            autofocus
                             @disabled(!$configured)
-                            @error('email')
-                                aria-invalid="true"
-                            @enderror
                         >
 
-                    </div>
-
-                    <div class="form-field">
-
-                        <label for="password">
-                            Password
-                        </label>
-
-                        <div class="password-input">
-
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                autocomplete="current-password"
-                                required
-                                @disabled(!$configured)
-                            >
-
-                            <button
-                                type="button"
-                                data-password-toggle
-                                aria-controls="password"
-                                aria-label="Show password"
-                                @disabled(!$configured)
-                            >
-                                Show
-                            </button>
-
-                        </div>
+                        <button
+                            type="button"
+                            data-password-toggle
+                            aria-controls="password"
+                            aria-label="Show password"
+                            @disabled(!$configured)
+                        >
+                            Show
+                        </button>
 
                     </div>
 
-                    <button
-                        type="submit"
-                        class="button button-primary login-submit"
-                        @disabled(!$configured)
-                    >
+                </div>
 
-                        Sign in
 
-                        <x-icon name="arrow" />
+                <button
+                    type="submit"
+                    class="button button-primary login-submit"
+                    @disabled(!$configured)
+                >
+                    Sign in
+                    <x-icon name="arrow" />
+                </button>
 
-                    </button>
+            </form>
 
-                </form>
 
-                <p class="login-help">
+            <p class="login-help">
+                <x-icon name="shield" />
+                Super administrator access only.
+            </p>
 
-                    <x-icon name="shield" />
+        </div>
 
-                    Use the Supabase account assigned a super-admin role.
 
-                </p>
+        <footer class="auth-footer">
+            © {{ date('Y') }} TalentFlow AI
+            <span>·</span>
+            Admin Console
+        </footer>
 
-            </div>
+    </main>
 
-            <footer class="auth-footer">
-                TalentFlow AI
-                <span>·</span>
-                System Dashboard
-            </footer>
+</div>
 
-        </main>
 
-    </div>
-
-    <div
-        class="loading-indicator"
-        role="status"
-        aria-live="polite"
-        hidden
-    >
-        Signing in…
-    </div>
+<div
+    class="loading-indicator"
+    role="status"
+    aria-live="polite"
+    hidden
+>
+    Signing in…
+</div>
 
 </body>
-
 </html>
