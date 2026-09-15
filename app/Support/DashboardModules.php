@@ -44,6 +44,7 @@ final class DashboardModules
         'email' => 'Email',
         'phone_number' => 'Phone',
         'role' => 'Role',
+        'active_sessions' => 'Active sessions',
         'created_at' => 'Created',
     ],
 

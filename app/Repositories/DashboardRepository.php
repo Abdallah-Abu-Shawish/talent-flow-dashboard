@@ -156,5 +156,54 @@ public function authUser(string $id): array
     return $this->client->adminGetUser($id);
 }
 
+public function userSessionCounts(
+    array $userIds,
+    string $token
+): array {
+    $userIds = array_values(
+        array_unique(
+            array_filter(
+                $userIds,
+                fn ($id) =>
+                    is_string($id) &&
+                    $id !== ''
+            )
+        )
+    );
 
+    if ($userIds === []) {
+        return [];
+    }
+
+    $rows = $this->client->rpc(
+        'dashboard_user_session_counts',
+        [
+            'p_user_ids' => $userIds,
+        ],
+        $token
+    );
+
+    $counts = array_fill_keys(
+        $userIds,
+        0
+    );
+
+    foreach ($rows as $row) {
+        $userId =
+            $row['user_id'] ?? null;
+
+        if (
+            is_string($userId) &&
+            isset($counts[$userId])
+        ) {
+            $counts[$userId] =
+                (int) (
+                    $row['active_sessions']
+                    ?? 0
+                );
+        }
+    }
+
+    return $counts;
+}
 }

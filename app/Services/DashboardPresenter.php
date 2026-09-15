@@ -15,64 +15,94 @@ final class DashboardPresenter
     ) {}
 
     public function table(
-        string $module,
-        array $filters,
-        string $token,
-        array $scope = []
-    ): array {
-        $definition = DashboardModules::get($module);
+    string $module,
+    array $filters,
+    string $token,
+    array $scope = []
+): array {
+    $definition = DashboardModules::get($module);
 
-        $paginator = $this->repository->page(
-            $module,
-            $filters,
-            $token,
-            $scope
+    $paginator = $this->repository->page(
+        $module,
+        $filters,
+        $token,
+        $scope
+    );
+
+    $rawRows = $paginator->items();
+
+    $rows = array_map(
+        fn ($row) => $this->row($module, $row),
+        $rawRows
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Active user sessions
+    |--------------------------------------------------------------------------
+    |
+    | Fetch all session counts in ONE RPC call for the users displayed
+    | on the current page.
+    |
+    */
+
+    if ($module === 'users') {
+        $userIds = array_values(
+            array_filter(
+                array_map(
+                    fn ($row) => $row['id'] ?? null,
+                    $rawRows
+                ),
+                fn ($id) =>
+                    is_string($id) &&
+                    $id !== ''
+            )
         );
 
-        return [
-            'title' => $definition['title'],
+        $sessionCounts =
+            $this->repository->userSessionCounts(
+                $userIds,
+                $token
+            );
 
-            'description' =>
-                $definition['description'],
+        foreach ($rows as &$row) {
+            $userId = $row['id'] ?? null;
 
-            'columns' =>
-                DashboardModules::columns(
-                    $definition
-                ),
+            $row['active_sessions'] =
+                isset($sessionCounts[$userId])
+                    ? (string) $sessionCounts[$userId]
+                    : '0';
+        }
 
-            'rows' =>
-                array_map(
-                    fn ($row) =>
-                        $this->row(
-                            $module,
-                            $row
-                        ),
-                    $paginator->items()
-                ),
-
-            'paginator' =>
-                $paginator,
-
-            'filters' =>
-                $filters,
-
-            'filterFields' =>
-                $this->filterFields(
-                    $module,
-                    $definition
-                ),
-
-            'createUrl' =>
-                $module === 'organizations'
-                    ? route(
-                        'organizations.create'
-                    )
-                    : null,
-
-            'tabs' =>
-                $this->tabs($module),
-        ];
+        unset($row);
     }
+
+    return [
+        'title' => $definition['title'],
+        'description' => $definition['description'],
+
+        'columns' =>
+            DashboardModules::columns($definition),
+
+        'rows' => $rows,
+
+        'paginator' => $paginator,
+        'filters' => $filters,
+
+        'filterFields' =>
+            $this->filterFields(
+                $module,
+                $definition
+            ),
+
+        'createUrl' =>
+            $module === 'organizations'
+                ? route('organizations.create')
+                : null,
+
+        'tabs' => $this->tabs($module),
+    ];
+}
 
     private function row(
         string $module,
