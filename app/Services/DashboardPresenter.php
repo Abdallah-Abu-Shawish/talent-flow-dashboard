@@ -7,6 +7,7 @@ use App\Support\DashboardModules;
 use App\Support\SafeDisplay;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 
 final class DashboardPresenter
 {
@@ -136,16 +137,24 @@ final class DashboardPresenter
         $safe = [];
 
         foreach ($row as $key => $value) {
-            if (
-                is_scalar($value)
-                || $value === null
-            ) {
-                $safe[$key] =
-                    SafeDisplay::text(
-                        $value
-                    );
-            }
+
+        if (
+            is_string($key) &&
+            str_ends_with($key, '_at') &&
+            $value !== null &&
+            $value !== ''
+        ) {
+            $safe[$key] =
+                $this->formatDateTime($value);
+
+            continue;
         }
+
+        if (is_scalar($value) || $value === null) {
+            $safe[$key] =
+                SafeDisplay::text($value);
+        }
+    }
 
         $links = [];
 
@@ -927,13 +936,12 @@ final class DashboardPresenter
                     ? 'Yes'
                     : 'No';
 
-            $fields[
-                'Last sign in'
-            ] =
-                $authUser[
-                    'last_sign_in_at'
-                ]
-                ?? 'Never';
+           $fields['Last sign in'] =
+            !empty($authUser['last_sign_in_at'])
+        ? $this->formatDateTime(
+            $authUser['last_sign_in_at']
+        )
+        : 'Never';
 
             $fields[
                 'User ID'
@@ -1312,4 +1320,23 @@ final class DashboardPresenter
                 $table,
         ];
     }
+
+    private function formatDateTime(mixed $value): string
+{
+    if (
+        $value === null ||
+        $value === '' ||
+        $value === '—'
+    ) {
+        return '—';
+    }
+
+    try {
+        return Carbon::parse((string) $value)
+            ->utc()
+            ->format('d M Y · H:i') . ' UTC';
+    } catch (\Throwable) {
+        return (string) $value;
+    }
+}
 }
