@@ -86,6 +86,7 @@
                     $navigation = [
                         ['overview', 'Overview', 'grid', 'overview'],
                         ['organizations.index', 'Organizations', 'building', 'organizations.*'],
+                        ['company-requests.index', 'Company Requests', 'building', 'company-requests.*'],
                         ['users.index', 'Users & access', 'users', 'users.*'],
                         ['jobs.index', 'Jobs', 'briefcase', 'jobs.*'],
                         ['interviews.index', 'AI interviews', 'interview', 'interviews.*'],
@@ -103,7 +104,7 @@
 
                 @foreach ($navigation as [$destination, $label, $icon, $pattern])
 
-                    @if ($loop->index === 6)
+                    @if ($loop->index === 7)
                         <p class="nav-caption sidebar-label">
                             OPERATIONS
                         </p>

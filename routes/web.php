@@ -7,6 +7,8 @@ use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserAdminController;
+use App\Http\Controllers\CompanyRequestController;
+
 
 Route::middleware([SecurityHeaders::class])->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
@@ -19,6 +21,11 @@ Route::middleware([SecurityHeaders::class])->group(function () {
         Route::get('/usage', [DashboardController::class, 'usage'])->name('usage.index');
         Route::get('/health', [DashboardController::class, 'health'])->name('health');
         Route::get('/settings', [DashboardController::class, 'settings'])->name('settings');
+        
+        Route::get(
+    '/company-requests',
+    [CompanyRequestController::class, 'index']
+)->name('company-requests.index');
 
         // Organizations custom routes (must precede resource show route)
         Route::get('/organizations/create', [OrganizationController::class, 'create'])->name('organizations.create');
@@ -109,3 +116,16 @@ Route::delete(
 Route::get('/speed-test', function () {
     return response('OK', 200);
 });
+
+Route::get(
+    '/company-requests/{id}',
+    [CompanyRequestController::class, 'show']
+)->name('company-requests.show');
+Route::post(
+    '/company-requests/{id}/approve',
+    [CompanyRequestController::class, 'approve']
+)->name('company-requests.approve');
+Route::post(
+    '/company-requests/{id}/reject',
+    [CompanyRequestController::class, 'reject']
+)->name('company-requests.reject');
