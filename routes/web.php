@@ -66,3 +66,7 @@ Route::middleware([SecurityHeaders::class])->group(function () {
             ->name('audit.show');
     });
 });
+
+Route::get('/speed-test', function () {
+    return response('OK', 200);
+});
