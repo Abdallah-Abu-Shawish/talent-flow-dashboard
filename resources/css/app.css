@@ -1998,4 +1998,60 @@ dialog p { font-size:12px; color:var(--muted); line-height:1.8; margin-top:10px;
     .user-security-card .button-secondary {
         width: 100%;
     }
+    /* =========================================================
+   TALENTFLOW AI — FORCE LIGHT MODE ONLY
+   ========================================================= */
+
+html,
+:root,
+:root[data-theme='dark'] {
+    color-scheme: light !important;
+
+    --canvas: #f7faff !important;
+    --surface: #ffffff !important;
+    --surface-muted: #f4f8ff !important;
+
+    --text: #10213a !important;
+    --muted: #6b7a90 !important;
+    --border: #e4ebf5 !important;
+
+    --accent: #2558e6 !important;
+    --accent-text: #2558e6 !important;
+    --accent-soft: #eff6ff !important;
+
+    --cyan: #11b9d3 !important;
+
+    --shadow:
+        0 4px 18px rgba(30, 64, 175, 0.05)
+        !important;
+}
+
+/* Never allow dark styling to affect dashboard components */
+[data-theme='dark'] .badge-success {
+    color: #047857 !important;
+    background: #ecfdf5 !important;
+    border-color: #a7f3d0 !important;
+}
+
+[data-theme='dark'] .badge-danger {
+    color: #b91c1c !important;
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+}
+
+[data-theme='dark'] .badge-warning {
+    color: #a16207 !important;
+    background: #fffbeb !important;
+    border-color: #fde68a !important;
+}
+
+body {
+    background: #f7faff !important;
+    color: #10213a !important;
+}
+
+.page-heading h1,
+.page-heading h2 {
+    color: #10213a !important;
+}
 }

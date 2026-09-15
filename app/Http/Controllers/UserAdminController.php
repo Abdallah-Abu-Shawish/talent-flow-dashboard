@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SupabaseException;
 use App\Services\Supabase\Client;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use App\Exceptions\SupabaseException;
 
 final class UserAdminController extends Controller
 {
     public function __construct(
         private Client $client,
     ) {}
+
 
     // =========================================================
     // EDIT USER
@@ -27,9 +28,13 @@ final class UserAdminController extends Controller
                 'profiles',
                 [
                     'select' =>
-                        'id,email,full_name,phone_number,role,created_at,updated_at',
-                    'id' => 'eq.'.$id,
-                    'limit' => 1,
+                        'id,email,full_name,phone_number,role,company_request_enabled,created_at,updated_at',
+
+                    'id' =>
+                        'eq.'.$id,
+
+                    'limit' =>
+                        1,
                 ]
             )
             ->json();
@@ -40,10 +45,14 @@ final class UserAdminController extends Controller
             404
         );
 
-        $profile = $profileRows[0];
+        $profile =
+            $profileRows[0];
+
 
         $authUser =
-            $this->client->adminGetUser($id);
+            $this->client
+                ->adminGetUser($id);
+
 
         $companies =
             $this->client
@@ -52,11 +61,13 @@ final class UserAdminController extends Controller
                     [
                         'select' =>
                             'id,name,slug',
+
                         'order' =>
                             'name.asc',
                     ]
                 )
                 ->json();
+
 
         $memberships =
             $this->client
@@ -65,13 +76,16 @@ final class UserAdminController extends Controller
                     [
                         'select' =>
                             'id,company_id,user_id,role,created_at,company:companies(name)',
+
                         'user_id' =>
                             'eq.'.$id,
+
                         'order' =>
                             'created_at.desc',
                     ]
                 )
                 ->json();
+
 
         return view(
             'dashboard.users.edit',
@@ -94,6 +108,7 @@ final class UserAdminController extends Controller
             ]
         );
     }
+
 
     // =========================================================
     // UPDATE USER PROFILE
@@ -127,12 +142,21 @@ final class UserAdminController extends Controller
                     'required',
                     'in:candidate,super_admin',
                 ],
+
+                'company_request_enabled' => [
+                    'required',
+                    'boolean',
+                ],
             ]);
+
 
         $currentAdminId =
             (string) $request
                 ->session()
-                ->get('admin.profile.id');
+                ->get(
+                    'admin.profile.id'
+                );
+
 
         /*
          * Prevent accidentally removing your own
@@ -151,6 +175,7 @@ final class UserAdminController extends Controller
                 );
         }
 
+
         $email =
             mb_strtolower(
                 trim(
@@ -158,19 +183,32 @@ final class UserAdminController extends Controller
                 )
             );
 
+
         $fullName =
             trim(
                 $validated['full_name']
             );
 
+
         $phone =
             isset(
-                $validated['phone_number']
+                $validated[
+                    'phone_number'
+                ]
             )
                 ? trim(
-                    $validated['phone_number']
+                    $validated[
+                        'phone_number'
+                    ]
                 )
                 : '';
+
+
+        $companyRequestEnabled =
+            $request->boolean(
+                'company_request_enabled'
+            );
+
 
         /*
          * Update Supabase Auth first.
@@ -191,6 +229,7 @@ final class UserAdminController extends Controller
                     ],
                 ]
             );
+
 
         /*
          * Then synchronize public.profiles.
@@ -217,12 +256,16 @@ final class UserAdminController extends Controller
                     'role' =>
                         $validated['role'],
 
+                    'company_request_enabled' =>
+                        $companyRequestEnabled,
+
                     'updated_at' =>
                         now()
                             ->utc()
                             ->toIso8601String(),
                 ]
             );
+
 
         return redirect()
             ->route(
@@ -234,6 +277,7 @@ final class UserAdminController extends Controller
                 'User updated successfully.'
             );
     }
+
 
     // =========================================================
     // SET NEW PASSWORD
@@ -254,11 +298,13 @@ final class UserAdminController extends Controller
                 ],
             ]);
 
+
         $this->client
             ->adminSetPassword(
                 $id,
                 $validated['password']
             );
+
 
         return back()
             ->with(
@@ -267,48 +313,59 @@ final class UserAdminController extends Controller
             );
     }
 
+
     // =========================================================
     // SEND PASSWORD RESET
     // =========================================================
 
- public function sendPasswordReset(
-    string $id,
-): RedirectResponse {
-    $authUser =
-        $this->client
-            ->adminGetUser($id);
+    public function sendPasswordReset(
+        string $id,
+    ): RedirectResponse {
+        $authUser =
+            $this->client
+                ->adminGetUser($id);
 
-    $email = trim(
-        (string) (
-            $authUser['email']
-            ?? ''
-        )
-    );
 
-    abort_if(
-        $email === '',
-        404
-    );
-
-    try {
-        $this->client
-            ->sendPasswordRecovery(
-                $email
+        $email =
+            trim(
+                (string) (
+                    $authUser['email']
+                    ?? ''
+                )
             );
-    } catch (SupabaseException $exception) {
 
-        return back()->with(
-            'error',
-            'Could not send the password reset email. '
-            .'If a reset was recently requested, wait about 60 seconds and try again.'
+
+        abort_if(
+            $email === '',
+            404
         );
+
+
+        try {
+            $this->client
+                ->sendPasswordRecovery(
+                    $email
+                );
+
+        } catch (
+            SupabaseException $exception
+        ) {
+            return back()
+                ->with(
+                    'error',
+                    'Could not send the password reset email. '
+                    .'If a reset was recently requested, wait about 60 seconds and try again.'
+                );
+        }
+
+
+        return back()
+            ->with(
+                'success',
+                'Password reset email sent to '.$email.'.'
+            );
     }
 
-    return back()->with(
-        'success',
-        'Password reset email sent to '.$email.'.'
-    );
-}
 
     // =========================================================
     // ADD / UPDATE COMPANY ACCESS
@@ -331,6 +388,7 @@ final class UserAdminController extends Controller
                 ],
             ]);
 
+
         $existing =
             $this->client
                 ->serviceSelect(
@@ -343,7 +401,8 @@ final class UserAdminController extends Controller
                             'eq.'.$id,
 
                         'company_id' =>
-                            'eq.'.$validated[
+                            'eq.'
+                            .$validated[
                                 'company_id'
                             ],
 
@@ -353,9 +412,12 @@ final class UserAdminController extends Controller
                 )
                 ->json();
 
+
         if (
             is_array($existing)
-            && isset($existing[0]['id'])
+            && isset(
+                $existing[0]['id']
+            )
         ) {
             $this->client
                 ->serviceUpdate(
@@ -372,6 +434,7 @@ final class UserAdminController extends Controller
                             ],
                     ]
                 );
+
         } else {
             $this->client
                 ->serviceInsert(
@@ -393,12 +456,14 @@ final class UserAdminController extends Controller
                 );
         }
 
+
         return back()
             ->with(
                 'success',
                 'Company access updated successfully.'
             );
     }
+
 
     // =========================================================
     // REMOVE COMPANY ACCESS
@@ -425,12 +490,14 @@ final class UserAdminController extends Controller
                 ]
             );
 
+
         return back()
             ->with(
                 'success',
                 'Company access removed.'
             );
     }
+
 
     // =========================================================
     // DELETE USER
@@ -443,15 +510,21 @@ final class UserAdminController extends Controller
         $currentAdminId =
             (string) $request
                 ->session()
-                ->get('admin.profile.id');
+                ->get(
+                    'admin.profile.id'
+                );
 
-        if ($id === $currentAdminId) {
+
+        if (
+            $id === $currentAdminId
+        ) {
             return back()
                 ->with(
                     'error',
                     'You cannot delete your own account.'
                 );
         }
+
 
         /*
          * Delete Auth user.
@@ -465,8 +538,11 @@ final class UserAdminController extends Controller
                 false
             );
 
+
         return redirect()
-            ->route('users.index')
+            ->route(
+                'users.index'
+            )
             ->with(
                 'success',
                 'User deleted successfully.'

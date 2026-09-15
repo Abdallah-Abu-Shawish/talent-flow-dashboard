@@ -28,8 +28,9 @@
         <div class="card-heading">
             <div>
                 <h2>Profile information</h2>
+
                 <p>
-                    Update the user's account information and global role.
+                    Update the user's account information, global role and company request permission.
                 </p>
             </div>
 
@@ -46,6 +47,7 @@
 
             <div class="form-fields">
 
+                {{-- FULL NAME --}}
                 <div class="form-field">
                     <label for="full_name">
                         Full name
@@ -62,6 +64,7 @@
                 </div>
 
 
+                {{-- EMAIL --}}
                 <div class="form-field">
                     <label for="email">
                         Email address
@@ -78,6 +81,7 @@
                 </div>
 
 
+                {{-- PHONE --}}
                 <div class="form-field">
                     <label for="phone_number">
                         Phone number
@@ -94,6 +98,7 @@
                 </div>
 
 
+                {{-- GLOBAL ROLE --}}
                 <div class="form-field">
                     <label for="role">
                         Global role
@@ -106,14 +111,24 @@
                     >
                         <option
                             value="candidate"
-                            @selected(old('role', $profile['role'] ?? '') === 'candidate')
+                            @selected(
+                                old(
+                                    'role',
+                                    $profile['role'] ?? ''
+                                ) === 'candidate'
+                            )
                         >
                             Candidate
                         </option>
 
                         <option
                             value="super_admin"
-                            @selected(old('role', $profile['role'] ?? '') === 'super_admin')
+                            @selected(
+                                old(
+                                    'role',
+                                    $profile['role'] ?? ''
+                                ) === 'super_admin'
+                            )
                         >
                             Super Admin
                         </option>
@@ -124,16 +139,72 @@
                     </p>
                 </div>
 
+
+                {{-- COMPANY CREATION REQUEST PERMISSION --}}
+                <div class="form-field">
+                    <label for="company_request_enabled">
+                        Company creation request
+                    </label>
+
+                    <select
+                        id="company_request_enabled"
+                        name="company_request_enabled"
+                        required
+                    >
+                        <option
+                            value="0"
+                            @selected(
+                                (string) old(
+                                    'company_request_enabled',
+                                    !empty(
+                                        $profile[
+                                            'company_request_enabled'
+                                        ]
+                                    )
+                                        ? '1'
+                                        : '0'
+                                ) === '0'
+                            )
+                        >
+                            Not allowed
+                        </option>
+
+                        <option
+                            value="1"
+                            @selected(
+                                (string) old(
+                                    'company_request_enabled',
+                                    !empty(
+                                        $profile[
+                                            'company_request_enabled'
+                                        ]
+                                    )
+                                        ? '1'
+                                        : '0'
+                                ) === '1'
+                            )
+                        >
+                            Allowed
+                        </option>
+                    </select>
+
+                    <p class="field-hint">
+                        Allows this user to submit one company creation request for Super Admin review.
+                    </p>
+                </div>
+
             </div>
 
 
             <div class="form-footer">
+
                 <button
                     type="submit"
                     class="button button-primary"
                 >
                     Save changes
                 </button>
+
             </div>
 
         </form>
@@ -148,14 +219,21 @@
     <section class="card">
 
         <div class="card-heading">
+
             <div>
-                <h2>Company access</h2>
+
+                <h2>
+                    Company access
+                </h2>
+
                 <p>
                     Assign this user to a company as an admin or interviewer.
                 </p>
+
             </div>
 
             <x-icon name="building" />
+
         </div>
 
 
@@ -167,7 +245,9 @@
 
             <div class="form-fields">
 
+                {{-- COMPANY --}}
                 <div class="form-field">
+
                     <label for="company_id">
                         Company
                     </label>
@@ -182,54 +262,68 @@
                         </option>
 
                         @foreach($companies as $company)
+
                             <option
                                 value="{{ $company['id'] }}"
                             >
                                 {{ $company['name'] }}
                             </option>
+
                         @endforeach
+
                     </select>
+
                 </div>
 
 
+                {{-- COMPANY ROLE --}}
                 <div class="form-field">
-    <label for="company_role">
-        Company role
-    </label>
 
-    <select
-        id="company_role"
-        name="company_role"
-        required
-    >
-        <option value="" selected disabled>
-            Select role
-        </option>
+                    <label for="company_role">
+                        Company role
+                    </label>
 
-        <option value="company_admin">
-            Company Admin
-        </option>
+                    <select
+                        id="company_role"
+                        name="company_role"
+                        required
+                    >
+                        <option
+                            value=""
+                            selected
+                            disabled
+                        >
+                            Select role
+                        </option>
 
-        <option value="interviewer">
-            Interviewer
-        </option>
-    </select>
+                        <option value="company_admin">
+                            Company Admin
+                        </option>
 
-    <p class="field-hint">
-        Choose the access level this user should have in the selected company.
-    </p>
-</div>
+                        <option value="interviewer">
+                            Interviewer
+                        </option>
+
+                    </select>
+
+                    <p class="field-hint">
+                        Choose the access level this user should have in the selected company.
+                    </p>
+
+                </div>
 
             </div>
 
 
             <div class="form-footer">
+
                 <button
                     type="submit"
                     class="button button-primary"
                 >
                     Save company access
                 </button>
+
             </div>
 
         </form>
@@ -244,31 +338,55 @@
                     <div class="user-membership-row">
 
                         <div>
+
                             <strong>
-                                {{ $membership['company']['name'] ?? 'Unknown company' }}
+                                {{
+                                    $membership[
+                                        'company'
+                                    ][
+                                        'name'
+                                    ]
+                                    ?? 'Unknown company'
+                                }}
                             </strong>
 
                             <small>
                                 {{
-                                    match($membership['role'] ?? '') {
-                                        'company_admin' => 'Company Admin',
-                                        'interviewer' => 'Interviewer',
-                                        default => $membership['role'] ?? 'Unknown'
+                                    match(
+                                        $membership[
+                                            'role'
+                                        ]
+                                        ?? ''
+                                    ) {
+                                        'company_admin'
+                                            => 'Company Admin',
+
+                                        'interviewer'
+                                            => 'Interviewer',
+
+                                        default
+                                            => $membership[
+                                                'role'
+                                            ]
+                                            ?? 'Unknown'
                                     }
                                 }}
                             </small>
+
                         </div>
 
 
                         <form
                             method="POST"
-                            action="{{ route(
-                                'users.membership.destroy',
-                                [
-                                    $profile['id'],
-                                    $membership['id']
-                                ]
-                            ) }}"
+                            action="{{
+                                route(
+                                    'users.membership.destroy',
+                                    [
+                                        $profile['id'],
+                                        $membership['id']
+                                    ]
+                                )
+                            }}"
                         >
                             @csrf
                             @method('DELETE')
@@ -276,10 +394,13 @@
                             <button
                                 type="submit"
                                 class="button button-secondary"
-                                onclick="return confirm('Remove this company access?')"
+                                onclick="return confirm(
+                                    'Remove this company access?'
+                                )"
                             >
                                 Remove
                             </button>
+
                         </form>
 
                     </div>
@@ -300,19 +421,27 @@
     <section class="card">
 
         <div class="card-heading">
+
             <div>
-                <h2>Password & security</h2>
+
+                <h2>
+                    Password & security
+                </h2>
+
                 <p>
                     Send a reset email or assign a new password.
                 </p>
+
             </div>
 
             <x-icon name="shield" />
+
         </div>
 
 
         <div class="form-fields">
 
+            {{-- PASSWORD RESET EMAIL --}}
             <form
                 method="POST"
                 action="{{ route('users.password-reset', $profile['id']) }}"
@@ -325,9 +454,11 @@
                 >
                     Send password reset email
                 </button>
+
             </form>
 
 
+            {{-- MANUAL PASSWORD --}}
             <form
                 method="POST"
                 action="{{ route('users.password', $profile['id']) }}"
@@ -335,6 +466,7 @@
                 @csrf
 
                 <div class="form-field">
+
                     <label for="password">
                         New password
                     </label>
@@ -347,10 +479,12 @@
                         maxlength="128"
                         autocomplete="new-password"
                     >
+
                 </div>
 
 
                 <div class="form-field">
+
                     <label for="password_confirmation">
                         Confirm password
                     </label>
@@ -363,6 +497,7 @@
                         maxlength="128"
                         autocomplete="new-password"
                     >
+
                 </div>
 
 
@@ -372,6 +507,7 @@
                 >
                     Set new password
                 </button>
+
             </form>
 
         </div>
@@ -388,11 +524,15 @@
         <div class="card-heading">
 
             <div>
-                <h2>Danger zone</h2>
+
+                <h2>
+                    Danger zone
+                </h2>
 
                 <p>
                     Permanently delete this user account.
                 </p>
+
             </div>
 
         </div>
@@ -401,11 +541,15 @@
         <div class="user-danger-body">
 
             <div>
-                <strong>Delete user</strong>
+
+                <strong>
+                    Delete user
+                </strong>
 
                 <p>
                     This action cannot be undone.
                 </p>
+
             </div>
 
 
