@@ -2054,4 +2054,367 @@ body {
 .page-heading h2 {
     color: #10213a !important;
 }
+
+}
+
+/* =========================================================
+   TALENTFLOW - JOBS NESTED SIDEBAR
+========================================================= */
+
+.sidebar-nav-group {
+    position: relative;
+}
+
+
+/* Keep Jobs highlighted while a child page is active */
+.nav-link.nav-parent-active {
+    background: #eff6ff;
+    border-color: transparent;
+    color: #2563eb;
+}
+
+
+/* Parent chevron visible for the whole group */
+.sidebar-nav-group.active > .nav-link .nav-chevron {
+    visibility: visible;
+}
+
+
+/* =========================================================
+   SUB NAVIGATION
+========================================================= */
+
+.sidebar-subnav {
+    position: relative;
+
+    margin:
+        1px
+        0
+        5px
+        20px;
+
+    padding:
+        1px
+        0
+        2px
+        18px;
+}
+
+
+/* Vertical tree branch */
+.sidebar-subnav::before {
+    content: '';
+
+    position: absolute;
+
+    left: 8px;
+    top: -7px;
+    bottom: 17px;
+
+    width: 1px;
+
+    background: #d8e3f1;
+}
+
+
+/* Child link */
+.sidebar-subnav-link {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    min-height: 34px;
+
+    gap: 8px;
+
+    padding:
+        7px
+        9px;
+
+    border-radius: 8px;
+
+    color: #718198;
+
+    font-size: 10.5px;
+    font-weight: 500;
+
+    transition:
+        background-color .15s ease,
+        color .15s ease;
+}
+
+
+/* Horizontal branch into child */
+.sidebar-subnav-link::before {
+    content: '';
+
+    position: absolute;
+
+    left: -10px;
+    top: 50%;
+
+    width: 10px;
+    height: 1px;
+
+    background: #d8e3f1;
+}
+
+
+/* Small round node */
+.sidebar-subnav-node {
+    width: 6px;
+    height: 6px;
+
+    flex-shrink: 0;
+
+    border-radius: 999px;
+
+    border: 1.5px solid #9fb0c7;
+
+    background: #ffffff;
+}
+
+
+/* Child arrow */
+.sidebar-subnav-chevron {
+    width: 10px !important;
+    height: 10px !important;
+
+    margin-left: auto;
+
+    color: #94a3b8;
+}
+
+
+/* Hover */
+.sidebar-subnav-link:hover {
+    color: #2563eb;
+    background: #f4f8ff;
+}
+
+
+/* Active child */
+.sidebar-subnav-link.active {
+    color: #2563eb;
+
+    background: #eff6ff;
+
+    font-weight: 600;
+}
+
+
+.sidebar-subnav-link.active .sidebar-subnav-node {
+    border-color: #2563eb;
+    background: #2563eb;
+}
+
+
+.sidebar-subnav-link.active .sidebar-subnav-chevron {
+    color: #2563eb;
+}
+
+
+/* =========================================================
+   COLLAPSED SIDEBAR
+========================================================= */
+
+.sidebar-collapsed .sidebar-subnav {
+    display: none;
+}
+
+
+/* Mobile sidebar is expanded */
+@media (max-width: 760px) {
+
+    .sidebar-collapsed .sidebar-subnav {
+        display: block;
+    }
+
+}
+/* =========================================================
+   JOB CATEGORY AVAILABILITY
+========================================================= */
+
+.category-availability-label {
+    display: block;
+    margin-bottom: 8px;
+
+    color: var(--text);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+.category-availability {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 0;
+    padding: 14px 15px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--surface-muted);
+
+    cursor: pointer;
+}
+
+
+.category-availability input[type='checkbox'] {
+    width: 15px;
+    height: 15px;
+
+    margin-top: 2px;
+
+    flex-shrink: 0;
+
+    accent-color: var(--accent);
+}
+
+
+.category-availability-copy {
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+
+    min-width: 0;
+}
+
+
+.category-availability-copy strong {
+    display: block;
+
+    color: var(--text);
+
+    font-size: 12px;
+    font-weight: 600;
+
+    line-height: 1.4;
+}
+
+
+.category-availability-copy small {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 10px;
+    font-weight: 400;
+
+    line-height: 1.6;
+}
+/* =========================================================
+   JOB / CATEGORY FORM — FINAL LAYOUT FIX
+========================================================= */
+
+/* Prevent the browser document from becoming horizontally scrollable. */
+html,
+body,
+.dashboard-shell {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+/*
+ * The sidebar is fixed and .workspace-main already uses margin-left.
+ * Do not add a second calculated width here; auto sizing is correct.
+ */
+.workspace-main {
+    margin-left: var(--nav-width) !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow-x: clip;
+}
+
+.page-content {
+    width: auto !important;
+    max-width: 1800px !important;
+    min-width: 0 !important;
+    overflow-x: clip;
+}
+
+.page-heading,
+.page-heading > * {
+    min-width: 0;
+}
+
+/* Form layout */
+.form-layout {
+    display: grid;
+    width: 100% !important;
+    max-width: 1100px !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    grid-template-columns: minmax(0, 720px) minmax(230px, 300px);
+    gap: 30px;
+    align-items: start;
+}
+
+.form-layout > form,
+.form-layout > .card,
+.form-layout > .form-aside,
+.form-fields,
+.form-field {
+    min-width: 0 !important;
+    max-width: 100%;
+}
+
+.form-layout > form {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.form-layout > .form-aside {
+    width: 100%;
+}
+
+.form-layout input:not([type='checkbox']),
+.form-layout select,
+.form-layout textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.form-layout .field-hint,
+.form-layout .category-availability-copy,
+.form-layout .form-aside p {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+    .form-layout {
+        grid-template-columns: minmax(0, 1fr) 220px;
+        gap: 22px;
+    }
+}
+
+@media (max-width: 950px) {
+    .form-layout {
+        grid-template-columns: 1fr;
+        max-width: 720px !important;
+    }
+
+    .form-layout > .form-aside {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 760px) {
+    .workspace-main {
+        margin-left: 0 !important;
+        width: auto !important;
+    }
+
+    .form-layout {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
 }

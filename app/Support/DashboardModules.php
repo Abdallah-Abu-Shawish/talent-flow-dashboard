@@ -8,19 +8,32 @@ final class DashboardModules
     {
         $definitions = [
 
+            // =====================================================
+            // ORGANIZATIONS
+            // =====================================================
+
             'organizations' => [
                 'table' => 'companies',
+
                 'title' => 'Enterprise Accounts',
-                'description' => 'Organization identity, plan and recorded token balance across the platform.',
-                'select' => 'id,name,slug,plan,token_balance,created_at,updated_at',
+
+                'description' =>
+                    'Organization identity, plan and recorded token balance across the platform.',
+
+                'select' =>
+                    'id,name,slug,plan,token_balance,created_at,updated_at',
+
                 'search' => 'name',
+
                 'statuses' => [
                     'free',
                     'starter',
                     'pro',
                     'enterprise',
                 ],
+
                 'statusField' => 'plan',
+
                 'columns' => [
                     'name' => 'Organization',
                     'slug' => 'Slug',
@@ -28,6 +41,7 @@ final class DashboardModules
                     'token_balance' => 'Token balance',
                     'created_at' => 'Created',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                     'name' => 'Name',
@@ -36,12 +50,17 @@ final class DashboardModules
             ],
 
 
+            // =====================================================
+            // USERS
+            // =====================================================
+
             'users' => [
                 'table' => 'profiles',
 
                 'title' => 'Users & Access',
 
-                'description' => 'Manage users, profile information and platform access.',
+                'description' =>
+                    'Manage users, profile information and platform access.',
 
                 'select' =>
                     'id,email,full_name,phone_number,role,company_request_enabled,created_at,updated_at',
@@ -79,38 +98,100 @@ final class DashboardModules
             ],
 
 
+            // =====================================================
+            // GLOBAL JOB CATALOG
+            // job_roles = Jobs managed by Super Admin
+            // =====================================================
+
             'jobs' => [
-                'table' => 'job_postings',
+                'table' => 'job_roles',
+
                 'title' => 'Jobs',
-                'description' => 'Platform job inspection with linked interviews and candidate identities.',
-                'select' => 'id,title,department,status,company_id,created_by,created_at,company:companies!job_postings_company_id_fkey(name)',
-                'search' => 'title',
+
+                'description' =>
+                    'Manage the global job catalog used across the TalentFlow platform.',
+
+                'select' =>
+                    'id,'
+                    .'category_id,'
+                    .'title,'
+                    .'slug,'
+                    .'description,'
+                    .'is_active,'
+                    .'created_by,'
+                    .'created_at,'
+                    .'updated_at,'
+                    .'category:job_categories!job_roles_category_id_fkey(name,is_active)',
+
+                'search' => [
+                    'title',
+                    'slug',
+                ],
+
+                'searchLabel' =>
+                    'Search job title or slug',
+
                 'statuses' => [
-                    'draft',
-                    'active',
-                    'archived',
+                    'true',
+                    'false',
                 ],
-                'statusField' => 'status',
-                'companyField' => 'company_id',
+
+                'statusField' =>
+                    'is_active',
+
                 'columns' => [
-                    'title' => 'Job',
-                    'company_name' => 'Organization',
-                    'department' => 'Department',
-                    'status' => 'Status',
-                    'created_at' => 'Created',
+                    'title' =>
+                        'Job',
+
+                    'category_name' =>
+                        'Category',
+
+                    'slug' =>
+                        'Slug',
+
+                    'is_active' =>
+                        'Availability',
+
+                    'created_at' =>
+                        'Created',
                 ],
+
                 'sorts' => [
-                    'created_at' => 'Newest',
-                    'title' => 'Title',
+                    'created_at' =>
+                        'Newest',
+
+                    'title' =>
+                        'Title',
+
+                    'slug' =>
+                        'Slug',
                 ],
             ],
 
 
+            // =====================================================
+            // AI INTERVIEWS
+            //
+            // IMPORTANT:
+            // Interviews continue to use job_postings.
+            // job_postings contains the company-specific job
+            // description/context used by the AI interview.
+            // =====================================================
+
             'interviews' => [
                 'table' => 'interviews',
+
                 'title' => 'AI Interviews',
-                'description' => 'Recorded interview lifecycle. In progress does not confirm a live connection.',
-                'select' => 'id,company_id,job_id,candidate_id,status,scheduled_at,started_at,ended_at,overall_score,created_at,company:companies!interviews_company_id_fkey(name),job:job_postings!interview_job_tenant_fk(title),candidate:profiles!interviews_candidate_id_fkey(full_name)',
+
+                'description' =>
+                    'Recorded interview lifecycle. In progress does not confirm a live connection.',
+
+                'select' =>
+                    'id,company_id,job_id,candidate_id,status,scheduled_at,started_at,ended_at,overall_score,created_at,'
+                    .'company:companies!interviews_company_id_fkey(name),'
+                    .'job:job_postings!interview_job_tenant_fk(title),'
+                    .'candidate:profiles!interviews_candidate_id_fkey(full_name)',
+
                 'statuses' => [
                     'scheduled',
                     'in_progress',
@@ -118,8 +199,11 @@ final class DashboardModules
                     'failed',
                     'flagged',
                 ],
+
                 'statusField' => 'status',
+
                 'companyField' => 'company_id',
+
                 'columns' => [
                     'candidate_name' => 'Candidate',
                     'job_title' => 'Job',
@@ -128,6 +212,7 @@ final class DashboardModules
                     'scheduled_at' => 'Scheduled',
                     'overall_score' => 'Recorded score',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                     'scheduled_at' => 'Scheduled time',
@@ -135,13 +220,25 @@ final class DashboardModules
             ],
 
 
+            // =====================================================
+            // USAGE
+            // =====================================================
+
             'usage' => [
                 'table' => 'token_usage_logs',
+
                 'title' => 'Usage & Tokens',
-                'description' => 'Immutable token debit ledger. Ledger entries are not provider request counts or monetary costs.',
-                'select' => 'id,company_id,interview_id,service_name,tokens_used,balance_after,created_at,company:companies(name)',
+
+                'description' =>
+                    'Immutable token debit ledger. Ledger entries are not provider request counts or monetary costs.',
+
+                'select' =>
+                    'id,company_id,interview_id,service_name,tokens_used,balance_after,created_at,company:companies(name)',
+
                 'companyField' => 'company_id',
+
                 'serviceField' => 'service_name',
+
                 'columns' => [
                     'company_name' => 'Organization',
                     'service_name' => 'Service',
@@ -149,6 +246,7 @@ final class DashboardModules
                     'balance_after' => 'Balance after',
                     'created_at' => 'Recorded at',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                     'tokens_used' => 'Tokens used',
@@ -156,37 +254,63 @@ final class DashboardModules
             ],
 
 
+            // =====================================================
+            // CREDITS
+            // =====================================================
+
             'credits' => [
                 'table' => 'token_credit_logs',
+
                 'title' => 'Token Credits',
-                'description' => 'Recorded token credits. Credits do not represent subscription or invoice payments.',
-                'select' => 'id,company_id,tokens_added,balance_after,created_at,company:companies(name)',
+
+                'description' =>
+                    'Recorded token credits. Credits do not represent subscription or invoice payments.',
+
+                'select' =>
+                    'id,company_id,tokens_added,balance_after,created_at,company:companies(name)',
+
                 'companyField' => 'company_id',
+
                 'columns' => [
                     'company_name' => 'Organization',
                     'tokens_added' => 'Tokens added',
                     'balance_after' => 'Balance after',
                     'created_at' => 'Recorded at',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                 ],
             ],
 
 
+            // =====================================================
+            // AUDIT
+            // =====================================================
+
             'audit' => [
                 'table' => 'audit_logs',
+
                 'title' => 'Audit Logs',
-                'description' => 'Immutable database row changes. Open an event for a safe before/after summary.',
-                'select' => 'id,event_sequence,table_name,record_id,company_id,action,performed_by,database_role,created_at',
+
+                'description' =>
+                    'Immutable database row changes. Open an event for a safe before/after summary.',
+
+                'select' =>
+                    'id,event_sequence,table_name,record_id,company_id,action,performed_by,database_role,created_at',
+
                 'search' => 'table_name',
+
                 'statuses' => [
                     'INSERT',
                     'UPDATE',
                     'DELETE',
                 ],
+
                 'statusField' => 'action',
+
                 'companyField' => 'company_id',
+
                 'columns' => [
                     'table_name' => 'Resource',
                     'action' => 'Action',
@@ -195,23 +319,37 @@ final class DashboardModules
                     'database_role' => 'Database role',
                     'created_at' => 'Recorded at',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                 ],
             ],
 
 
+            // =====================================================
+            // DASHBOARD COMMANDS
+            // =====================================================
+
             'commands' => [
                 'table' => 'dashboard_admin_commands',
+
                 'title' => 'Dashboard Actions',
-                'description' => 'Committed organization commands with actor attribution and the administrator’s reason.',
-                'select' => 'id,actor_id,company_id,action,reason,created_at',
+
+                'description' =>
+                    'Committed organization commands with actor attribution and the administrator’s reason.',
+
+                'select' =>
+                    'id,actor_id,company_id,action,reason,created_at',
+
                 'statuses' => [
                     'create',
                     'update',
                 ],
+
                 'statusField' => 'action',
+
                 'companyField' => 'company_id',
+
                 'columns' => [
                     'action' => 'Committed action',
                     'company_id' => 'Organization',
@@ -219,26 +357,42 @@ final class DashboardModules
                     'reason' => 'Reason',
                     'created_at' => 'Recorded at',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                 ],
             ],
 
 
+            // =====================================================
+            // SECURITY
+            // =====================================================
+
             'security' => [
                 'table' => 'anti_cheat_logs',
+
                 'title' => 'Security & Integrity',
-                'description' => 'Persisted interview integrity observations. Severity is recorded by the producer.',
-                'select' => 'id,interview_id,event_type,severity,created_at,interview:interviews!inner(company_id,candidate_id)',
+
+                'description' =>
+                    'Persisted interview integrity observations. Severity is recorded by the producer.',
+
+                'select' =>
+                    'id,interview_id,event_type,severity,created_at,interview:interviews!inner(company_id,candidate_id)',
+
                 'search' => 'event_type',
+
                 'statuses' => [
                     'low',
                     'medium',
                     'high',
                     'critical',
                 ],
+
                 'statusField' => 'severity',
-                'companyField' => 'interview.company_id',
+
+                'companyField' =>
+                    'interview.company_id',
+
                 'columns' => [
                     'event_type' => 'Event',
                     'severity' => 'Severity',
@@ -246,23 +400,36 @@ final class DashboardModules
                     'company_id' => 'Organization',
                     'created_at' => 'Recorded at',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                 ],
             ],
 
 
+            // =====================================================
+            // AUTH EVENTS
+            // =====================================================
+
             'auth-events' => [
                 'table' => 'dashboard_auth_events',
+
                 'title' => 'Authentication Events',
-                'description' => 'Dashboard sign-ins, access denials, expirations, sign-outs and failed admin actions.',
-                'select' => 'id,actor_id,event,outcome,correlation_id,created_at',
+
+                'description' =>
+                    'Dashboard sign-ins, access denials, expirations, sign-outs and failed admin actions.',
+
+                'select' =>
+                    'id,actor_id,event,outcome,correlation_id,created_at',
+
                 'statuses' => [
                     'success',
                     'denied',
                     'failure',
                 ],
+
                 'statusField' => 'outcome',
+
                 'columns' => [
                     'event' => 'Event',
                     'outcome' => 'Outcome',
@@ -270,29 +437,44 @@ final class DashboardModules
                     'correlation_id' => 'Correlation ID',
                     'created_at' => 'Recorded at',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                 ],
             ],
 
 
+            // =====================================================
+            // COMPANY MEMBERS
+            // =====================================================
+
             'members' => [
                 'table' => 'company_members',
+
                 'title' => 'Organization Memberships',
-                'description' => 'Tenant authority is separate from the global profile role.',
-                'select' => 'id,company_id,user_id,role,created_at,company:companies(name),profile:profiles(full_name)',
+
+                'description' =>
+                    'Tenant authority is separate from the global profile role.',
+
+                'select' =>
+                    'id,company_id,user_id,role,created_at,company:companies(name),profile:profiles(full_name)',
+
                 'statuses' => [
                     'company_admin',
                     'interviewer',
                 ],
+
                 'statusField' => 'role',
+
                 'companyField' => 'company_id',
+
                 'columns' => [
                     'full_name' => 'Member',
                     'company_name' => 'Organization',
                     'role' => 'Tenant role',
                     'created_at' => 'Joined',
                 ],
+
                 'sorts' => [
                     'created_at' => 'Newest',
                 ],
@@ -305,14 +487,20 @@ final class DashboardModules
             404
         );
 
+
         return $definitions[$module];
     }
 
+
+    // =========================================================
+    // COLUMN TYPES
+    // =========================================================
 
     public static function columns(
         array $definition
     ): array {
         $columns = [];
+
 
         foreach (
             $definition['columns']
@@ -329,10 +517,12 @@ final class DashboardModules
                         'severity',
                         'action',
                         'outcome',
+                        'is_active',
                     ],
                     true
                 ) =>
                     'badge',
+
 
                 str_ends_with(
                     $key,
@@ -340,6 +530,7 @@ final class DashboardModules
                 )
                 || $key === 'id' =>
                     'mono',
+
 
                 in_array(
                     $key,
@@ -355,9 +546,11 @@ final class DashboardModules
                 ) =>
                     'number',
 
+
                 default =>
                     'text',
             };
+
 
             $columns[] =
                 compact(
@@ -366,6 +559,7 @@ final class DashboardModules
                     'type'
                 );
         }
+
 
         return $columns;
     }

@@ -3,8 +3,11 @@
 <html lang="en">
 
 <head>
+
     <meta charset="utf-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <meta name="color-scheme" content="light">
 
     <title>@yield('title', 'Dashboard') · TalentFlow AI</title>
@@ -16,15 +19,25 @@
     >
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
 </head>
+
 
 <body>
 
-    <a class="skip-link" href="#main-content">
+    <a
+        class="skip-link"
+        href="#main-content"
+    >
         Skip to content
     </a>
 
+
     <div class="dashboard-shell">
+
+        {{-- =====================================================
+             SIDEBAR
+        ====================================================== --}}
 
         <aside
             class="sidebar"
@@ -32,6 +45,7 @@
             aria-label="Administration"
         >
 
+            {{-- BRAND --}}
             <a
                 class="brand"
                 href="{{ route('overview') }}"
@@ -39,6 +53,7 @@
             >
 
                 <span class="brand-symbol">
+
                     <img
                         src="{{ asset('images/logo.png') }}"
                         alt="TalentFlow AI"
@@ -49,17 +64,26 @@
                             display: block;
                         "
                     >
+
                 </span>
 
+
                 <span class="brand-copy">
+
                     <strong>
                         TalentFlow <span>AI</span>
                     </strong>
-                    <small>Admin Console</small>
+
+                    <small>
+                        Admin Console
+                    </small>
+
                 </span>
 
             </a>
 
+
+            {{-- WORKSPACE --}}
             <div class="workspace">
 
                 <span class="workspace-avatar">
@@ -67,65 +91,176 @@
                 </span>
 
                 <span class="sidebar-label">
+
                     Global workspace
+
                     <small>
                         Platform administration
                     </small>
+
                 </span>
 
                 <x-icon name="lock" />
 
             </div>
 
+
+            {{-- =================================================
+                 NAVIGATION
+            ================================================== --}}
+
             <nav
                 class="main-navigation"
                 aria-label="Main navigation"
             >
 
-                @php
-                    $navigation = [
-                        ['overview', 'Overview', 'grid', 'overview'],
-                        ['organizations.index', 'Organizations', 'building', 'organizations.*'],
-                        ['company-requests.index', 'Company Requests', 'building', 'company-requests.*'],
-                        ['users.index', 'Users & access', 'users', 'users.*'],
-                        ['jobs.index', 'Jobs', 'briefcase', 'jobs.*'],
-                        ['interviews.index', 'AI interviews', 'interview', 'interviews.*'],
-                        ['usage.index', 'Usage & tokens', 'coins', 'usage.*'],
-                        ['health', 'System health', 'activity', 'health'],
-                        ['audit.index', 'Audit logs', 'audit', 'audit.*'],
-                        ['security.index', 'Security', 'shield', 'security.*'],
-                        ['settings', 'Settings', 'settings', 'settings'],
-                    ];
-                @endphp
-
                 <p class="nav-caption sidebar-label">
                     WORKSPACE
                 </p>
 
-                @foreach ($navigation as [$destination, $label, $icon, $pattern])
 
-                    @if ($loop->index === 7)
-                        <p class="nav-caption sidebar-label">
-                            OPERATIONS
-                        </p>
+                {{-- OVERVIEW --}}
+                <a
+                    href="{{ route('overview') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('overview'),
+                    ])
+                    title="Overview"
+                    @if(request()->routeIs('overview'))
+                        aria-current="page"
                     @endif
+                >
 
+                    <x-icon name="grid" />
+
+                    <span class="sidebar-label">
+                        Overview
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- ORGANIZATIONS --}}
+                <a
+                    href="{{ route('organizations.index') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('organizations.*'),
+                    ])
+                    title="Organizations"
+                >
+
+                    <x-icon name="building" />
+
+                    <span class="sidebar-label">
+                        Organizations
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- COMPANY REQUESTS --}}
+                <a
+                    href="{{ route('company-requests.index') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('company-requests.*'),
+                    ])
+                    title="Company Requests"
+                >
+
+                    <x-icon name="building" />
+
+                    <span class="sidebar-label">
+                        Company Requests
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- USERS --}}
+                <a
+                    href="{{ route('users.index') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('users.*'),
+                    ])
+                    title="Users & access"
+                >
+
+                    <x-icon name="users" />
+
+                    <span class="sidebar-label">
+                        Users & access
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- =================================================
+                     JOBS GROUP
+                ================================================== --}}
+
+                @php
+                    $jobsActive =
+                        request()->routeIs('jobs.*');
+
+                    $jobCategoriesActive =
+                        request()->routeIs('job-categories.*')
+                        || request()->is('job-categories*');
+
+                    $jobsGroupActive =
+                        $jobsActive
+                        || $jobCategoriesActive;
+                @endphp
+
+
+                <div
+                    @class([
+                        'sidebar-nav-group',
+                        'active' => $jobsGroupActive,
+                    ])
+                >
+
+                    {{-- JOBS --}}
                     <a
-                        href="{{ route($destination) }}"
+                        href="{{ route('jobs.index') }}"
                         @class([
                             'nav-link',
-                            'active' => request()->routeIs($pattern),
+                            'active' => $jobsActive,
+                            'nav-parent-active' => $jobCategoriesActive,
                         ])
-                        title="{{ $label }}"
-                        @if(request()->routeIs($pattern))
+                        title="Jobs"
+                        @if($jobsActive)
                             aria-current="page"
                         @endif
                     >
 
-                        <x-icon :name="$icon" />
+                        <x-icon name="briefcase" />
 
                         <span class="sidebar-label">
-                            {{ $label }}
+                            Jobs
                         </span>
 
                         <x-icon
@@ -135,26 +270,223 @@
 
                     </a>
 
-                @endforeach
+
+                    {{-- JOB CATEGORIES CHILD --}}
+                    <div class="sidebar-subnav sidebar-label">
+
+                        <a
+                            href="{{ url('/job-categories') }}"
+                            @class([
+                                'sidebar-subnav-link',
+                                'active' => $jobCategoriesActive,
+                            ])
+                            @if($jobCategoriesActive)
+                                aria-current="page"
+                            @endif
+                        >
+
+                            <span
+                                class="sidebar-subnav-node"
+                                aria-hidden="true"
+                            ></span>
+
+                            <span>
+                                Job Categories
+                            </span>
+
+                            <x-icon
+                                name="chevron"
+                                class="sidebar-subnav-chevron"
+                            />
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+
+                {{-- AI INTERVIEWS --}}
+                <a
+                    href="{{ route('interviews.index') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('interviews.*'),
+                    ])
+                    title="AI interviews"
+                >
+
+                    <x-icon name="interview" />
+
+                    <span class="sidebar-label">
+                        AI interviews
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- USAGE --}}
+                <a
+                    href="{{ route('usage.index') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('usage.*'),
+                    ])
+                    title="Usage & tokens"
+                >
+
+                    <x-icon name="coins" />
+
+                    <span class="sidebar-label">
+                        Usage & tokens
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- =================================================
+                     OPERATIONS
+                ================================================== --}}
+
+                <p class="nav-caption sidebar-label">
+                    OPERATIONS
+                </p>
+
+
+                {{-- SYSTEM HEALTH --}}
+                <a
+                    href="{{ route('health') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('health'),
+                    ])
+                    title="System health"
+                >
+
+                    <x-icon name="activity" />
+
+                    <span class="sidebar-label">
+                        System health
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- AUDIT --}}
+                <a
+                    href="{{ route('audit.index') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('audit.*'),
+                    ])
+                    title="Audit logs"
+                >
+
+                    <x-icon name="audit" />
+
+                    <span class="sidebar-label">
+                        Audit logs
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- SECURITY --}}
+                <a
+                    href="{{ route('security.index') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('security.*'),
+                    ])
+                    title="Security"
+                >
+
+                    <x-icon name="shield" />
+
+                    <span class="sidebar-label">
+                        Security
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
+
+
+                {{-- SETTINGS --}}
+                <a
+                    href="{{ route('settings') }}"
+                    @class([
+                        'nav-link',
+                        'active' => request()->routeIs('settings'),
+                    ])
+                    title="Settings"
+                >
+
+                    <x-icon name="settings" />
+
+                    <span class="sidebar-label">
+                        Settings
+                    </span>
+
+                    <x-icon
+                        name="chevron"
+                        class="nav-chevron"
+                    />
+
+                </a>
 
             </nav>
+
+
+            {{-- =================================================
+                 SIDEBAR FOOTER
+            ================================================== --}}
 
             <div class="sidebar-footer">
 
                 <div class="admin-identity">
 
                     <span class="avatar">
+
                         {{
                             mb_strtoupper(
                                 mb_substr(
                                     session('admin.profile.full_name')
-                                    ?: session('admin.profile.email', 'A'),
+                                    ?: session(
+                                        'admin.profile.email',
+                                        'A'
+                                    ),
                                     0,
                                     1
                                 )
                             )
                         }}
+
                     </span>
+
 
                     <span class="sidebar-label">
 
@@ -174,6 +506,7 @@
                     </span>
 
                 </div>
+
 
                 <form
                     method="POST"
@@ -203,11 +536,17 @@
 
         </aside>
 
+
         <div
             class="sidebar-backdrop"
             data-sidebar-close
             hidden
         ></div>
+
+
+        {{-- =====================================================
+             MAIN WORKSPACE
+        ====================================================== --}}
 
         <div class="workspace-main">
 
@@ -224,6 +563,7 @@
                     <x-icon name="menu" />
                 </button>
 
+
                 <div class="breadcrumb">
 
                     <span>
@@ -237,6 +577,7 @@
                     </strong>
 
                 </div>
+
 
                 <div class="header-actions">
 
@@ -253,6 +594,7 @@
 
                     </a>
 
+
                     <button
                         class="icon-button"
                         type="button"
@@ -263,11 +605,10 @@
                         <x-icon name="refresh" />
                     </button>
 
-                    
-
                 </div>
 
             </header>
+
 
             <main
                 id="main-content"
@@ -279,12 +620,19 @@
 
                 @yield('content')
 
+
                 <footer class="page-footer">
 
                     <span>
+
                         TalentFlow AI
-                        <span class="footer-dot">·</span>
+
+                        <span class="footer-dot">
+                            ·
+                        </span>
+
                         System Dashboard
+
                     </span>
 
                     <span>
@@ -299,6 +647,7 @@
 
     </div>
 
+
     <div
         class="loading-indicator"
         role="status"
@@ -307,6 +656,7 @@
     >
         Loading latest data…
     </div>
+
 
     <dialog
         id="confirmation-dialog"
@@ -323,8 +673,10 @@
         </h2>
 
         <p id="confirmation-description">
-            This change will be saved to the organization and recorded in the audit history with your identity and reason.
+            This change will be saved to the organization and recorded
+            in the audit history with your identity and reason.
         </p>
+
 
         <div class="dialog-actions">
 

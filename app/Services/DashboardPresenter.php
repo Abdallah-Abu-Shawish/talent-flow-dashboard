@@ -6,8 +6,8 @@ use App\Repositories\DashboardRepository;
 use App\Support\DashboardModules;
 use App\Support\SafeDisplay;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 final class DashboardPresenter
 {
@@ -15,156 +15,254 @@ final class DashboardPresenter
         private DashboardRepository $repository
     ) {}
 
+
+    // =========================================================
+    // TABLE
+    // =========================================================
+
     public function table(
-    string $module,
-    array $filters,
-    string $token,
-    array $scope = []
-): array {
-    $definition = DashboardModules::get($module);
+        string $module,
+        array $filters,
+        string $token,
+        array $scope = []
+    ): array {
+        $definition = DashboardModules::get($module);
 
-    $paginator = $this->repository->page(
-        $module,
-        $filters,
-        $token,
-        $scope
-    );
-
-    $rawRows = $paginator->items();
-
-    $rows = array_map(
-        fn ($row) => $this->row($module, $row),
-        $rawRows
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Active user sessions
-    |--------------------------------------------------------------------------
-    |
-    | Fetch all session counts in ONE RPC call for the users displayed
-    | on the current page.
-    |
-    */
-
-    if ($module === 'users') {
-        $userIds = array_values(
-            array_filter(
-                array_map(
-                    fn ($row) => $row['id'] ?? null,
-                    $rawRows
-                ),
-                fn ($id) =>
-                    is_string($id) &&
-                    $id !== ''
-            )
+        $paginator = $this->repository->page(
+            $module,
+            $filters,
+            $token,
+            $scope
         );
 
-        $sessionCounts =
-            $this->repository->userSessionCounts(
-                $userIds,
-                $token
+        $rawRows = $paginator->items();
+
+        $rows = array_map(
+            fn ($row) => $this->row(
+                $module,
+                $row
+            ),
+            $rawRows
+        );
+
+
+        // =====================================================
+        // ACTIVE USER SESSIONS
+        // =====================================================
+
+        if ($module === 'users') {
+            $userIds = array_values(
+                array_filter(
+                    array_map(
+                        fn ($row) =>
+                            $row['id']
+                            ?? null,
+                        $rawRows
+                    ),
+                    fn ($id) =>
+                        is_string($id)
+                        && $id !== ''
+                )
             );
 
-        foreach ($rows as &$row) {
-            $userId = $row['id'] ?? null;
+            $sessionCounts =
+                $this->repository
+                    ->userSessionCounts(
+                        $userIds,
+                        $token
+                    );
 
-            $row['active_sessions'] =
-                isset($sessionCounts[$userId])
-                    ? (string) $sessionCounts[$userId]
-                    : '0';
+            foreach ($rows as &$row) {
+                $userId =
+                    $row['id']
+                    ?? null;
+
+                $row['active_sessions'] =
+                    isset(
+                        $sessionCounts[$userId]
+                    )
+                        ? (string)
+                            $sessionCounts[$userId]
+                        : '0';
+            }
+
+            unset($row);
         }
 
-        unset($row);
+
+        return [
+            'title' =>
+                $definition['title'],
+
+            'description' =>
+                $definition['description'],
+
+            'columns' =>
+                DashboardModules::columns(
+                    $definition
+                ),
+
+            'rows' =>
+                $rows,
+
+            'paginator' =>
+                $paginator,
+
+            'filters' =>
+                $filters,
+
+            'filterFields' =>
+                $this->filterFields(
+                    $module,
+                    $definition
+                ),
+
+            'createUrl' =>
+                $module === 'organizations'
+                    ? route(
+                        'organizations.create'
+                    )
+                    : null,
+
+            'tabs' =>
+                $this->tabs(
+                    $module
+                ),
+        ];
     }
 
-    return [
-        'title' => $definition['title'],
-        'description' => $definition['description'],
 
-        'columns' =>
-            DashboardModules::columns($definition),
-
-        'rows' => $rows,
-
-        'paginator' => $paginator,
-        'filters' => $filters,
-
-        'filterFields' =>
-            $this->filterFields(
-                $module,
-                $definition
-            ),
-
-        'createUrl' =>
-            $module === 'organizations'
-                ? route('organizations.create')
-                : null,
-
-        'tabs' => $this->tabs($module),
-    ];
-}
+    // =========================================================
+    // NORMALIZE ROW
+    // =========================================================
 
     private function row(
         string $module,
         array $row
     ): array {
+
+        // Organization relation.
         $row['company_name'] =
             $row['company']['name']
             ?? (
                 $module === 'interviews'
-                && empty($row['company_id'])
+                && empty(
+                    $row['company_id']
+                )
                     ? 'Practice interview'
                     : null
             );
 
+
+        // Interview -> company-specific job posting.
         $row['job_title'] =
             $row['job']['title']
             ?? null;
 
+
+        // Global job role -> category.
+        $row['category_name'] =
+            $row['category']['name']
+            ?? null;
+
+
+        // Candidate relation.
         $row['candidate_name'] =
             $row['candidate']['full_name']
             ?? null;
 
+
+        // Member/profile relation.
         $row['full_name'] ??=
             $row['profile']['full_name']
             ?? null;
+
 
         $row['company_id'] ??=
             $row['interview']['company_id']
             ?? null;
 
+
         $safe = [];
+
 
         foreach ($row as $key => $value) {
 
-        if (
-            is_string($key) &&
-            str_ends_with($key, '_at') &&
-            $value !== null &&
-            $value !== ''
-        ) {
-            $safe[$key] =
-                $this->formatDateTime($value);
+            // ================================================
+            // BOOLEAN AVAILABILITY
+            // ================================================
 
-            continue;
+            if ($key === 'is_active') {
+                $safe[$key] =
+                    filter_var(
+                        $value,
+                        FILTER_VALIDATE_BOOLEAN
+                    )
+                        ? 'Enabled'
+                        : 'Disabled';
+
+                continue;
+            }
+
+
+            // ================================================
+            // DATE / TIME
+            // ================================================
+
+            if (
+                is_string($key)
+                && str_ends_with(
+                    $key,
+                    '_at'
+                )
+                && $value !== null
+                && $value !== ''
+            ) {
+                $safe[$key] =
+                    $this->formatDateTime(
+                        $value
+                    );
+
+                continue;
+            }
+
+
+            // ================================================
+            // SAFE SCALAR OUTPUT
+            // ================================================
+
+            if (
+                is_scalar($value)
+                || $value === null
+            ) {
+                $safe[$key] =
+                    SafeDisplay::text(
+                        $value
+                    );
+            }
         }
 
-        if (is_scalar($value) || $value === null) {
-            $safe[$key] =
-                SafeDisplay::text($value);
-        }
-    }
+
+        // =====================================================
+        // LINKS
+        // =====================================================
 
         $links = [];
+
+
+        /*
+         * IMPORTANT:
+         *
+         * interview.job_id references job_postings,
+         * NOT global job_roles.
+         *
+         * Therefore job_id must NOT link to jobs.show.
+         */
 
         foreach (
             [
                 'company_id' =>
                     'organizations.show',
-
-                'job_id' =>
-                    'jobs.show',
 
                 'candidate_id' =>
                     'users.show',
@@ -184,7 +282,9 @@ final class DashboardPresenter
             as $key => $route
         ) {
             if (
-                ! empty($safe[$key])
+                ! empty(
+                    $safe[$key]
+                )
                 && Str::isUuid(
                     $safe[$key]
                 )
@@ -197,13 +297,11 @@ final class DashboardPresenter
             }
         }
 
+
         foreach (
             [
                 'company_name' =>
                     'company_id',
-
-                'job_title' =>
-                    'job_id',
 
                 'candidate_name' =>
                     'candidate_id',
@@ -213,11 +311,20 @@ final class DashboardPresenter
             ]
             as $label => $id
         ) {
-            if (isset($links[$id])) {
+            if (
+                isset(
+                    $links[$id]
+                )
+            ) {
                 $links[$label] =
                     $links[$id];
             }
         }
+
+
+        // =====================================================
+        // DETAIL URL
+        // =====================================================
 
         if (
             in_array(
@@ -243,10 +350,17 @@ final class DashboardPresenter
                 );
         }
 
+
         return $safe + [
-            '_links' => $links,
+            '_links' =>
+                $links,
         ];
     }
+
+
+    // =========================================================
+    // FILTER FIELDS
+    // =========================================================
 
     private function filterFields(
         string $module,
@@ -254,7 +368,16 @@ final class DashboardPresenter
     ): array {
         $fields = [];
 
-        if (isset($definition['search'])) {
+
+        // =====================================================
+        // SEARCH
+        // =====================================================
+
+        if (
+            isset(
+                $definition['search']
+            )
+        ) {
             $searchFields =
                 (array)
                     $definition['search'];
@@ -264,17 +387,24 @@ final class DashboardPresenter
                     $definition[
                         'searchLabel'
                     ]
-                    ?? 'Search '
-                    .str_replace(
-                        '_',
-                        ' ',
-                        $searchFields[0]
+                    ?? (
+                        'Search '
+                        .str_replace(
+                            '_',
+                            ' ',
+                            $searchFields[0]
+                        )
                     ),
 
                 'type' =>
                     'text',
             ];
         }
+
+
+        // =====================================================
+        // STATUS / ROLE / AVAILABILITY
+        // =====================================================
 
         if (
             isset(
@@ -283,25 +413,42 @@ final class DashboardPresenter
                 ]
             )
         ) {
-            $fields[
+            $statusField =
                 $definition[
                     'statusField'
-                ]
-            ] = [
-                'label' =>
-                    $module === 'users'
-                        ? 'Role'
-                        : ucfirst(
-                            $definition[
-                                'statusField'
-                            ]
+                ];
+
+
+            $label =
+                match (true) {
+
+                    $module === 'users' =>
+                        'Role',
+
+                    $module === 'jobs'
+                    && $statusField ===
+                        'is_active' =>
+                        'Availability',
+
+                    default =>
+                        ucfirst(
+                            $statusField
                         ),
+                };
 
-                'type' =>
-                    'select',
 
-                'options' =>
-                    array_combine(
+            $options =
+                $module === 'jobs'
+                && $statusField ===
+                    'is_active'
+                    ? [
+                        'true' =>
+                            'Enabled',
+
+                        'false' =>
+                            'Disabled',
+                    ]
+                    : array_combine(
                         $definition[
                             'statuses'
                         ],
@@ -314,15 +461,31 @@ final class DashboardPresenter
                                 'statuses'
                             ]
                         )
-                    ),
+                    );
+
+
+            $fields[
+                $statusField
+            ] = [
+                'label' =>
+                    $label,
+
+                'type' =>
+                    'select',
+
+                'options' =>
+                    $options,
             ];
         }
 
-        /*
-         * Keep Users & Access simple.
-         */
+
+        // =====================================================
+        // USERS: KEEP FILTERS SIMPLE
+        // =====================================================
+
         if ($module === 'users') {
             return $fields + [
+
                 'sort' => [
                     'label' =>
                         'Sort by',
@@ -335,6 +498,7 @@ final class DashboardPresenter
                             'sorts'
                         ],
                 ],
+
 
                 'direction' => [
                     'label' =>
@@ -352,6 +516,7 @@ final class DashboardPresenter
                     ],
                 ],
 
+
                 'per_page' => [
                     'label' =>
                         'Rows per page',
@@ -367,6 +532,11 @@ final class DashboardPresenter
                 ],
             ];
         }
+
+
+        // =====================================================
+        // ORGANIZATION FILTER
+        // =====================================================
 
         if (
             isset(
@@ -384,6 +554,11 @@ final class DashboardPresenter
             ];
         }
 
+
+        // =====================================================
+        // SERVICE FILTER
+        // =====================================================
+
         if (
             isset(
                 $definition[
@@ -400,7 +575,13 @@ final class DashboardPresenter
             ];
         }
 
+
+        // =====================================================
+        // MODULE-SPECIFIC FILTERS
+        // =====================================================
+
         $extra = match ($module) {
+
             'interviews' => [
                 'job_id' =>
                     'Job ID',
@@ -409,11 +590,13 @@ final class DashboardPresenter
                     'Candidate ID',
             ],
 
+
             'usage',
             'security' => [
                 'interview_id' =>
                     'Interview ID',
             ],
+
 
             'audit' => [
                 'record_id' =>
@@ -423,10 +606,12 @@ final class DashboardPresenter
                     'Actor ID',
             ],
 
+
             'commands' => [
                 'actor_id' =>
                     'Actor ID',
             ],
+
 
             'auth-events' => [
                 'actor_id' =>
@@ -436,25 +621,38 @@ final class DashboardPresenter
                     'Correlation ID',
             ],
 
+
             'members' => [
                 'user_id' =>
                     'User ID',
             ],
 
-            default => [],
+
+            default =>
+                [],
         };
+
 
         foreach (
             $extra
             as $key => $label
         ) {
             $fields[$key] = [
-                'label' => $label,
-                'type' => 'text',
+                'label' =>
+                    $label,
+
+                'type' =>
+                    'text',
             ];
         }
 
+
+        // =====================================================
+        // COMMON FILTERS
+        // =====================================================
+
         return $fields + [
+
             'from' => [
                 'label' =>
                     'Created from (UTC)',
@@ -463,6 +661,7 @@ final class DashboardPresenter
                     'date',
             ],
 
+
             'to' => [
                 'label' =>
                     'Created through (UTC)',
@@ -470,6 +669,7 @@ final class DashboardPresenter
                 'type' =>
                     'date',
             ],
+
 
             'sort' => [
                 'label' =>
@@ -483,6 +683,7 @@ final class DashboardPresenter
                         'sorts'
                     ],
             ],
+
 
             'direction' => [
                 'label' =>
@@ -500,6 +701,7 @@ final class DashboardPresenter
                 ],
             ],
 
+
             'per_page' => [
                 'label' =>
                     'Rows per page',
@@ -516,10 +718,16 @@ final class DashboardPresenter
         ];
     }
 
+
+    // =========================================================
+    // TABS
+    // =========================================================
+
     private function tabs(
         string $module
     ): array {
         $groups = [
+
             [
                 'audit' => [
                     'Row changes',
@@ -532,6 +740,7 @@ final class DashboardPresenter
                 ],
             ],
 
+
             [
                 'security' => [
                     'Interview integrity',
@@ -543,6 +752,7 @@ final class DashboardPresenter
                     'auth-events.index',
                 ],
             ],
+
 
             [
                 'usage' => [
@@ -557,13 +767,18 @@ final class DashboardPresenter
             ],
         ];
 
-        foreach ($groups as $group) {
+
+        foreach (
+            $groups
+            as $group
+        ) {
             if (
                 isset(
                     $group[$module]
                 )
             ) {
                 $tabs = [];
+
 
                 foreach (
                     $group
@@ -577,19 +792,28 @@ final class DashboardPresenter
                             $label,
 
                         'url' =>
-                            route($route),
+                            route(
+                                $route
+                            ),
 
                         'active' =>
                             $key === $module,
                     ];
                 }
 
+
                 return $tabs;
             }
         }
 
+
         return [];
     }
+
+
+    // =========================================================
+    // DETAIL
+    // =========================================================
 
     public function detail(
         string $module,
@@ -597,6 +821,7 @@ final class DashboardPresenter
         string $token
     ): array {
         $extra = match ($module) {
+
             'jobs' =>
                 ',description,updated_at',
 
@@ -610,6 +835,7 @@ final class DashboardPresenter
                 '',
         };
 
+
         $raw =
             $this->repository->find(
                 $module,
@@ -618,13 +844,16 @@ final class DashboardPresenter
                 $extra
             );
 
+
         $row =
             $this->row(
                 $module,
                 $raw
             );
 
+
         $fields = [];
+
 
         foreach (
             DashboardModules::get(
@@ -637,18 +866,22 @@ final class DashboardPresenter
                 ?? null;
         }
 
+
         $fields['Record ID'] =
             $id;
 
+
         $sections = [];
 
-        /*
-         * =====================================================
-         * ORGANIZATIONS
-         * =====================================================
-         */
 
-        if ($module === 'organizations') {
+        // =====================================================
+        // ORGANIZATIONS
+        // =====================================================
+
+        if (
+            $module ===
+            'organizations'
+        ) {
             $fields['Members'] =
                 $this->repository->count(
                     'members',
@@ -659,15 +892,6 @@ final class DashboardPresenter
                     $token
                 );
 
-            $fields['Jobs'] =
-                $this->repository->count(
-                    'jobs',
-                    [
-                        'company_id' =>
-                            $id,
-                    ],
-                    $token
-                );
 
             $fields['Interviews'] =
                 $this->repository->count(
@@ -679,6 +903,7 @@ final class DashboardPresenter
                     $token
                 );
 
+
             $sections[] =
                 $this->related(
                     'members',
@@ -689,15 +914,14 @@ final class DashboardPresenter
                     $token
                 );
 
-            $sections[] =
-                $this->related(
-                    'jobs',
-                    [
-                        'company_id' =>
-                            $id,
-                    ],
-                    $token
-                );
+
+            /*
+             * Do NOT use global "jobs" here.
+             *
+             * The jobs module now represents job_roles.
+             * Company job descriptions remain in job_postings.
+             */
+
 
             $sections[] =
                 $this->related(
@@ -710,16 +934,16 @@ final class DashboardPresenter
                 );
         }
 
-        /*
-         * =====================================================
-         * USERS
-         * =====================================================
-         */
-        elseif ($module === 'users') {
-            /*
-             * Public profile information.
-             */
+
+        // =====================================================
+        // USERS
+        // =====================================================
+
+        elseif (
+            $module === 'users'
+        ) {
             $fields = [
+
                 'Full name' =>
                     $row[
                         'full_name'
@@ -745,12 +969,17 @@ final class DashboardPresenter
                     ?? '—',
             ];
 
-            /*
-             * Supabase Auth information.
-             */
+
+            // =================================================
+            // SUPABASE AUTH
+            // =================================================
+
             $authUser =
                 $this->repository
-                    ->authUser($id);
+                    ->authUser(
+                        $id
+                    );
+
 
             $appMetadata =
                 is_array(
@@ -764,14 +993,13 @@ final class DashboardPresenter
                     ]
                     : [];
 
-            /*
-             * Get all linked sign-in providers.
-             */
+
             $providers =
                 $appMetadata[
                     'providers'
                 ]
                 ?? [];
+
 
             if (
                 ! is_array(
@@ -781,12 +1009,12 @@ final class DashboardPresenter
                 $providers = [];
             }
 
-            /*
-             * Fallback to identities when
-             * providers is unavailable.
-             */
+
+            // Fallback to identities.
             if (
-                empty($providers)
+                empty(
+                    $providers
+                )
                 && is_array(
                     $authUser[
                         'identities'
@@ -806,6 +1034,7 @@ final class DashboardPresenter
                         ]
                         ?? null;
 
+
                     if (
                         is_string(
                             $provider
@@ -818,11 +1047,12 @@ final class DashboardPresenter
                 }
             }
 
-            /*
-             * Final fallback to primary provider.
-             */
+
+            // Final fallback.
             if (
-                empty($providers)
+                empty(
+                    $providers
+                )
                 && ! empty(
                     $appMetadata[
                         'provider'
@@ -835,6 +1065,7 @@ final class DashboardPresenter
                     ];
             }
 
+
             $providers =
                 array_values(
                     array_unique(
@@ -844,6 +1075,7 @@ final class DashboardPresenter
                         )
                     )
                 );
+
 
             $providerLabel =
                 static function (
@@ -886,11 +1118,13 @@ final class DashboardPresenter
                     };
                 };
 
+
             $providerLabels =
                 array_map(
                     $providerLabel,
                     $providers
                 );
+
 
             $primaryProvider =
                 $appMetadata[
@@ -900,6 +1134,7 @@ final class DashboardPresenter
                     $providers[0]
                     ?? null
                 );
+
 
             $fields[
                 'Sign-in methods'
@@ -913,6 +1148,7 @@ final class DashboardPresenter
                     )
                     : 'Unknown';
 
+
             $fields[
                 'Primary sign-in'
             ] =
@@ -925,6 +1161,7 @@ final class DashboardPresenter
                     )
                     : 'Unknown';
 
+
             $fields[
                 'Email confirmed'
             ] =
@@ -936,18 +1173,29 @@ final class DashboardPresenter
                     ? 'Yes'
                     : 'No';
 
-           $fields['Last sign in'] =
-            !empty($authUser['last_sign_in_at'])
-        ? $this->formatDateTime(
-            $authUser['last_sign_in_at']
-        )
-        : 'Never';
+
+            $fields[
+                'Last sign in'
+            ] =
+                ! empty(
+                    $authUser[
+                        'last_sign_in_at'
+                    ]
+                )
+                    ? $this->formatDateTime(
+                        $authUser[
+                            'last_sign_in_at'
+                        ]
+                    )
+                    : 'Never';
+
 
             $fields[
                 'User ID'
             ] =
                 $row['id']
                 ?? $id;
+
 
             $fields[
                 'Created'
@@ -957,6 +1205,7 @@ final class DashboardPresenter
                 ]
                 ?? '—';
 
+
             $fields[
                 'Updated'
             ] =
@@ -965,9 +1214,8 @@ final class DashboardPresenter
                 ]
                 ?? '—';
 
-            /*
-             * Related company access.
-             */
+
+            // Related company memberships.
             $sections[] =
                 $this->related(
                     'members',
@@ -978,9 +1226,8 @@ final class DashboardPresenter
                     $token
                 );
 
-            /*
-             * Related interviews.
-             */
+
+            // Related interviews.
             $sections[] =
                 $this->related(
                     'interviews',
@@ -990,6 +1237,7 @@ final class DashboardPresenter
                     ],
                     $token
                 );
+
 
             $sections[] = [
                 'title' =>
@@ -1001,38 +1249,59 @@ final class DashboardPresenter
             ];
         }
 
-        /*
-         * =====================================================
-         * JOBS
-         * =====================================================
-         */
-        elseif ($module === 'jobs') {
-            $fields[
-                'Organization ID'
-            ] =
-                $row[
-                    'company_id'
-                ];
 
-            $fields[
-                'Created by'
-            ] =
-                $row[
-                    'created_by'
-                ]
-                ?? 'Not recorded';
+        // =====================================================
+        // GLOBAL JOB ROLES
+        // =====================================================
 
-            $fields[
-                'Interview count'
-            ] =
-                $this->repository->count(
-                    'interviews',
-                    [
-                        'job_id' =>
-                            $id,
-                    ],
-                    $token
-                );
+        elseif (
+            $module === 'jobs'
+        ) {
+
+            /*
+             * This module represents public.job_roles.
+             *
+             * It does NOT represent company job_postings.
+             */
+
+            $fields = [
+
+                'Job' =>
+                    $row['title']
+                    ?? '—',
+
+                'Category' =>
+                    $row[
+                        'category_name'
+                    ]
+                    ?? 'Not recorded',
+
+                'Availability' =>
+                    $row[
+                        'is_active'
+                    ]
+                    ?? 'Disabled',
+
+                'Slug' =>
+                    $row['slug']
+                    ?? '—',
+
+                'Created' =>
+                    $row[
+                        'created_at'
+                    ]
+                    ?? '—',
+
+                'Updated' =>
+                    $row[
+                        'updated_at'
+                    ]
+                    ?? '—',
+
+                'Record ID' =>
+                    $id,
+            ];
+
 
             $sections[] = [
                 'title' =>
@@ -1046,25 +1315,19 @@ final class DashboardPresenter
                         ?? ''
                     ),
             ];
-
-            $sections[] =
-                $this->related(
-                    'interviews',
-                    [
-                        'job_id' =>
-                            $id,
-                    ],
-                    $token
-                );
         }
 
-        /*
-         * =====================================================
-         * INTERVIEWS
-         * =====================================================
-         */
-        elseif ($module === 'interviews') {
+
+        // =====================================================
+        // INTERVIEWS
+        // =====================================================
+
+        elseif (
+            $module ===
+            'interviews'
+        ) {
             $fields += [
+
                 'Started (UTC)' =>
                     $row[
                         'started_at'
@@ -1082,12 +1345,14 @@ final class DashboardPresenter
                     ?? null,
             ];
 
+
             $evaluation =
                 $this->repository
                     ->evaluation(
                         $id,
                         $token
                     );
+
 
             $sections[] =
                 $evaluation
@@ -1096,6 +1361,7 @@ final class DashboardPresenter
                             'Recorded evaluation',
 
                         'fields' => [
+
                             'Technical score' =>
                                 $evaluation[
                                     'technical_score'
@@ -1125,6 +1391,7 @@ final class DashboardPresenter
                             'No evaluation has been recorded for this interview.',
                     ];
 
+
             $sections[] =
                 $this->related(
                     'security',
@@ -1134,6 +1401,7 @@ final class DashboardPresenter
                     ],
                     $token
                 );
+
 
             $sections[] =
                 $this->related(
@@ -1145,23 +1413,30 @@ final class DashboardPresenter
                     $token
                 );
 
+
             $sections[] = [
                 'title' =>
                     'Session observations',
 
                 'body' =>
-                    'Connection heartbeats, provider/model metadata, latency, cost and failure traces are not recorded by the current contract. Transcript and media access require a separate authorized access workflow.',
+                    'Connection heartbeats, provider/model metadata, latency, cost and failure traces are not recorded by the current contract. '
+                    .'Transcript and media access require a separate authorized access workflow.',
             ];
         }
 
-        /*
-         * =====================================================
-         * AUDIT
-         * =====================================================
-         */
-        elseif ($module === 'audit') {
-            $fields['Outcome'] =
+
+        // =====================================================
+        // AUDIT
+        // =====================================================
+
+        elseif (
+            $module === 'audit'
+        ) {
+            $fields[
+                'Outcome'
+            ] =
                 'Committed row change';
+
 
             $fields[
                 'Actor attribution'
@@ -1170,6 +1445,7 @@ final class DashboardPresenter
                     'performed_by'
                 ]
                 ?? 'No user actor recorded (database or backend operation)';
+
 
             $sections[] = [
                 'title' =>
@@ -1184,6 +1460,7 @@ final class DashboardPresenter
                     ),
             ];
 
+
             $sections[] = [
                 'title' =>
                     'After · safe fields',
@@ -1197,10 +1474,14 @@ final class DashboardPresenter
                     ),
             ];
 
+
             if (
-                $raw[
-                    'table_name'
-                ]
+                (
+                    $raw[
+                        'table_name'
+                    ]
+                    ?? null
+                )
                 === 'companies'
             ) {
                 $sections[] =
@@ -1217,7 +1498,60 @@ final class DashboardPresenter
             }
         }
 
+
+        // =====================================================
+        // EDIT URL
+        // =====================================================
+
+        $editUrl =
+            match ($module) {
+
+                'organizations' =>
+                    route(
+                        'organizations.edit',
+                        $id
+                    ),
+
+                'users' =>
+                    route(
+                        'users.edit',
+                        $id
+                    ),
+
+                'jobs' =>
+                    route(
+                        'jobs.edit',
+                        $id
+                    ),
+
+                default =>
+                    null,
+            };
+
+
+        $editLabel =
+            match ($module) {
+
+                'organizations' =>
+                    'Edit Organization',
+
+                'users' =>
+                    'Edit User',
+
+                'jobs' =>
+                    'Edit Job',
+
+                default =>
+                    'Edit',
+            };
+
+
+        // =====================================================
+        // RETURN DETAIL
+        // =====================================================
+
         return [
+
             'title' =>
                 $row['name']
                 ?? $row['full_name']
@@ -1248,24 +1582,17 @@ final class DashboardPresenter
                 $sections,
 
             'editUrl' =>
-                match ($module) {
-                    'organizations' =>
-                        route(
-                            'organizations.edit',
-                            $id
-                        ),
+                $editUrl,
 
-                    'users' =>
-                        route(
-                            'users.edit',
-                            $id
-                        ),
-
-                    default =>
-                        null,
-                },
+            'editLabel' =>
+                $editLabel,
         ];
     }
+
+
+    // =========================================================
+    // RELATED TABLE
+    // =========================================================
 
     private function related(
         string $module,
@@ -1283,60 +1610,97 @@ final class DashboardPresenter
                 $scope
             );
 
-        $table['filterFields'] =
-            [];
 
-        $table['createUrl'] =
-            null;
+        $table[
+            'filterFields'
+        ] = [];
 
-        $table['tabs'] =
-            [];
 
-        $table['paginator'] =
+        $table[
+            'createUrl'
+        ] = null;
+
+
+        $table[
+            'tabs'
+        ] = [];
+
+
+        $table[
+            'paginator'
+        ] =
             new LengthAwarePaginator(
-                $table['rows'],
+                $table[
+                    'rows'
+                ],
                 count(
-                    $table['rows']
+                    $table[
+                        'rows'
+                    ]
                 ),
                 5,
                 1
             );
 
-        $table['collectionUrl'] =
+
+        $table[
+            'collectionUrl'
+        ] =
             route(
                 $module.'.index',
                 $scope
             );
 
-        $table['note'] =
+
+        $table[
+            'note'
+        ] =
             'Showing up to 5 records. '
-            .$table['description'];
+            .$table[
+                'description'
+            ];
+
 
         return [
             'title' =>
-                $table['title'],
+                $table[
+                    'title'
+                ],
 
             'table' =>
                 $table,
         ];
     }
 
-    private function formatDateTime(mixed $value): string
-{
-    if (
-        $value === null ||
-        $value === '' ||
-        $value === '—'
-    ) {
-        return '—';
-    }
 
-    try {
-        return Carbon::parse((string) $value)
-            ->utc()
-            ->format('d M Y · H:i') . ' UTC';
-    } catch (\Throwable) {
-        return (string) $value;
+    // =========================================================
+    // FORMAT DATETIME
+    // =========================================================
+
+    private function formatDateTime(
+        mixed $value
+    ): string {
+        if (
+            $value === null
+            || $value === ''
+            || $value === '—'
+        ) {
+            return '—';
+        }
+
+
+        try {
+            return Carbon::parse(
+                (string) $value
+            )
+                ->utc()
+                ->format(
+                    'd M Y · H:i'
+                )
+                .' UTC';
+
+        } catch (\Throwable) {
+            return (string) $value;
+        }
     }
-}
 }
