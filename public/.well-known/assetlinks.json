@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.talent_flow",
+      "sha256_cert_fingerprints": [
+        "F5:C2:DA:51:EE:44:EF:93:77:C8:0E:09:40:83:63:51:65:07:7A:D3:11:91:9F:B0:AE:14:2E:BF:E8:85:6C:31"
+      ]
+    }
+  }
+]
