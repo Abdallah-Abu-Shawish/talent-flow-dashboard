@@ -14,46 +14,108 @@ server {
     # Max upload size
     client_max_body_size 64M;
 
-    # Handle main application routes via Laravel front controller
+
+    # =========================================================
+    # ANDROID APP LINKS
+    # =========================================================
+    # Must be accessible publicly:
+    # https://talant-flow.app/.well-known/assetlinks.json
+
+    location = /.well-known/assetlinks.json {
+        default_type application/json;
+
+        try_files $uri =404;
+
+        add_header Cache-Control "public, max-age=300";
+
+        access_log off;
+        log_not_found off;
+    }
+
+
+    # =========================================================
+    # LARAVEL APPLICATION
+    # =========================================================
+
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
-    # PHP-FPM FastCGI configuration for Azure App Service PHP Linux container
+
+    # =========================================================
+    # PHP-FPM
+    # =========================================================
+
     location ~ \.php$ {
         try_files $fastcgi_script_name =404;
+
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
+
         fastcgi_pass 127.0.0.1:9000;
         fastcgi_index index.php;
+
         include fastcgi_params;
+
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         fastcgi_param PATH_INFO $fastcgi_path_info;
+
         fastcgi_buffers 16 16k;
         fastcgi_buffer_size 32k;
+
         fastcgi_connect_timeout 60s;
         fastcgi_send_timeout 180s;
         fastcgi_read_timeout 180s;
     }
 
-    # Deny access to hidden files and sensitive configuration files
+
+    # =========================================================
+    # SECURITY
+    # =========================================================
+    # Deny all other hidden files/folders:
+    # .env
+    # .git
+    # etc.
+    #
+    # assetlinks.json is allowed above by exact match.
+    # =========================================================
+
     location ~ /\. {
         deny all;
+
         access_log off;
         log_not_found off;
     }
 
-    # Optimize static asset delivery
+
+    # =========================================================
+    # STATIC ASSETS
+    # =========================================================
+
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 30d;
+
         add_header Cache-Control "public, no-transform";
+
         access_log off;
         log_not_found off;
     }
 
-    # Enable Gzip Compression
+
+    # =========================================================
+    # GZIP
+    # =========================================================
+
     gzip on;
     gzip_comp_level 5;
     gzip_min_length 256;
     gzip_proxied any;
-    gzip_types application/javascript application/json application/xml text/css text/plain text/xml application/x-javascript;
+
+    gzip_types
+        application/javascript
+        application/json
+        application/xml
+        text/css
+        text/plain
+        text/xml
+        application/x-javascript;
 }
