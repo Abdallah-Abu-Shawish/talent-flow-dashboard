@@ -26,15 +26,21 @@
     <section class="card">
 
         <div class="card-heading">
+
             <div>
-                <h2>Profile information</h2>
+
+                <h2>
+                    Profile information
+                </h2>
 
                 <p>
                     Update the user's account information, global role and company request permission.
                 </p>
+
             </div>
 
             <x-icon name="users" />
+
         </div>
 
 
@@ -45,10 +51,12 @@
             @csrf
             @method('PATCH')
 
+
             <div class="form-fields">
 
                 {{-- FULL NAME --}}
                 <div class="form-field">
+
                     <label for="full_name">
                         Full name
                     </label>
@@ -61,11 +69,13 @@
                         maxlength="120"
                         required
                     >
+
                 </div>
 
 
                 {{-- EMAIL --}}
                 <div class="form-field">
+
                     <label for="email">
                         Email address
                     </label>
@@ -78,11 +88,13 @@
                         maxlength="254"
                         required
                     >
+
                 </div>
 
 
                 {{-- PHONE --}}
                 <div class="form-field">
+
                     <label for="phone_number">
                         Phone number
                     </label>
@@ -95,11 +107,13 @@
                         placeholder="+393521234567"
                         maxlength="30"
                     >
+
                 </div>
 
 
                 {{-- GLOBAL ROLE --}}
                 <div class="form-field">
+
                     <label for="role">
                         Global role
                     </label>
@@ -109,6 +123,7 @@
                         name="role"
                         required
                     >
+
                         <option
                             value="candidate"
                             @selected(
@@ -132,16 +147,19 @@
                         >
                             Super Admin
                         </option>
+
                     </select>
 
                     <p class="field-hint">
                         Company Admin and Interviewer access are managed separately below.
                     </p>
+
                 </div>
 
 
                 {{-- COMPANY CREATION REQUEST PERMISSION --}}
                 <div class="form-field">
+
                     <label for="company_request_enabled">
                         Company creation request
                     </label>
@@ -151,6 +169,7 @@
                         name="company_request_enabled"
                         required
                     >
+
                         <option
                             value="0"
                             @selected(
@@ -186,11 +205,13 @@
                         >
                             Allowed
                         </option>
+
                     </select>
 
                     <p class="field-hint">
                         Allows this user to submit one company creation request for Super Admin review.
                     </p>
+
                 </div>
 
             </div>
@@ -227,7 +248,7 @@
                 </h2>
 
                 <p>
-                    Assign this user to a company as an admin or interviewer.
+                    Assign this user to one company as an admin or interviewer.
                 </p>
 
             </div>
@@ -237,11 +258,45 @@
         </div>
 
 
+        @if(!empty($memberships))
+
+            @php
+                $currentMembership =
+                    $memberships[0] ?? null;
+            @endphp
+
+            <div
+                style="
+                    margin-bottom: 20px;
+                    padding: 14px 16px;
+                    border-radius: 14px;
+                    background: #F8FAFC;
+                    border: 1px solid #E2E8F0;
+                    color: #475569;
+                    font-size: 13px;
+                    line-height: 1.6;
+                "
+            >
+                This user is already associated with
+                <strong style="color:#0F172A;">
+                    {{
+                        $currentMembership['company']['name']
+                        ?? 'a company'
+                    }}
+                </strong>.
+
+                The role can be updated, but the user cannot be assigned to another company unless the current company access is removed first.
+            </div>
+
+        @endif
+
+
         <form
             method="POST"
             action="{{ route('users.membership.store', $profile['id']) }}"
         >
             @csrf
+
 
             <div class="form-fields">
 
@@ -257,6 +312,7 @@
                         name="company_id"
                         required
                     >
+
                         <option value="">
                             Select company
                         </option>
@@ -265,6 +321,13 @@
 
                             <option
                                 value="{{ $company['id'] }}"
+                                @selected(
+                                    !empty($memberships)
+                                    && (
+                                        $memberships[0]['company_id']
+                                        ?? null
+                                    ) === $company['id']
+                                )
                             >
                                 {{ $company['name'] }}
                             </option>
@@ -288,26 +351,45 @@
                         name="company_role"
                         required
                     >
+
                         <option
                             value=""
-                            selected
                             disabled
+                            @selected(empty($memberships))
                         >
                             Select role
                         </option>
 
-                        <option value="company_admin">
+                        <option
+                            value="company_admin"
+                            @selected(
+                                !empty($memberships)
+                                && (
+                                    $memberships[0]['role']
+                                    ?? ''
+                                ) === 'company_admin'
+                            )
+                        >
                             Company Admin
                         </option>
 
-                        <option value="interviewer">
-                            Interviewer
+                        <option
+                            value="interviewer"
+                            @selected(
+                                !empty($memberships)
+                                && (
+                                    $memberships[0]['role']
+                                    ?? ''
+                                ) === 'interviewer'
+                            )
+                        >
+                            HR / Interviewer
                         </option>
 
                     </select>
 
                     <p class="field-hint">
-                        Choose the access level this user should have in the selected company.
+                        Each user can belong to only one company.
                     </p>
 
                 </div>
@@ -362,7 +444,7 @@
                                             => 'Company Admin',
 
                                         'interviewer'
-                                            => 'Interviewer',
+                                            => 'HR / Interviewer',
 
                                         default
                                             => $membership[
@@ -412,6 +494,9 @@
         @endif
 
     </section>
+
+
+   
 
 
     {{-- =====================================================

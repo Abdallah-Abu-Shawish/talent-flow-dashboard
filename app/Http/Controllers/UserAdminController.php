@@ -23,6 +23,10 @@ final class UserAdminController extends Controller
         Request $request,
         string $id,
     ): View {
+        // =====================================================
+        // PROFILE
+        // =====================================================
+
         $profileRows = $this->client
             ->serviceSelect(
                 'profiles',
@@ -49,10 +53,18 @@ final class UserAdminController extends Controller
             $profileRows[0];
 
 
+        // =====================================================
+        // AUTH USER
+        // =====================================================
+
         $authUser =
             $this->client
                 ->adminGetUser($id);
 
+
+        // =====================================================
+        // COMPANIES
+        // =====================================================
 
         $companies =
             $this->client
@@ -68,6 +80,10 @@ final class UserAdminController extends Controller
                 )
                 ->json();
 
+
+        // =====================================================
+        // COMPANY MEMBERSHIPS
+        // =====================================================
 
         $memberships =
             $this->client
@@ -87,6 +103,129 @@ final class UserAdminController extends Controller
                 ->json();
 
 
+        // =====================================================
+        // COMPANY INVITATIONS
+        // =====================================================
+
+        $invitationRows =
+            $this->client
+                ->serviceSelect(
+                    'company_invitations',
+                    [
+                        'select' =>
+                            'id,company_id,invited_user_id,invited_email,role,status,invited_by,created_at,expires_at,responded_at',
+
+                        'invited_user_id' =>
+                            'eq.'.$id,
+
+                        'order' =>
+                            'created_at.desc',
+                    ]
+                )
+                ->json();
+
+
+        $invitations =
+            is_array($invitationRows)
+                ? $invitationRows
+                : [];
+
+
+        // =====================================================
+        // ENRICH INVITATIONS
+        // =====================================================
+
+        foreach ($invitations as &$invitation) {
+            $invitation['company_name'] =
+                'Unknown company';
+
+            $invitation['inviter_name'] =
+                'Unknown user';
+
+            $invitation['inviter_email'] =
+                null;
+
+
+            // -------------------------------------------------
+            // COMPANY
+            // -------------------------------------------------
+
+            if (!empty($invitation['company_id'])) {
+                $companyRows =
+                    $this->client
+                        ->serviceSelect(
+                            'companies',
+                            [
+                                'select' =>
+                                    'id,name',
+
+                                'id' =>
+                                    'eq.'.$invitation['company_id'],
+
+                                'limit' =>
+                                    1,
+                            ]
+                        )
+                        ->json();
+
+
+                if (
+                    is_array($companyRows)
+                    && isset($companyRows[0])
+                ) {
+                    $invitation['company_name'] =
+                        $companyRows[0]['name']
+                        ?? 'Unknown company';
+                }
+            }
+
+
+            // -------------------------------------------------
+            // INVITER
+            // -------------------------------------------------
+
+            if (!empty($invitation['invited_by'])) {
+                $inviterRows =
+                    $this->client
+                        ->serviceSelect(
+                            'profiles',
+                            [
+                                'select' =>
+                                    'id,full_name,email',
+
+                                'id' =>
+                                    'eq.'.$invitation['invited_by'],
+
+                                'limit' =>
+                                    1,
+                            ]
+                        )
+                        ->json();
+
+
+                if (
+                    is_array($inviterRows)
+                    && isset($inviterRows[0])
+                ) {
+                    $invitation['inviter_name'] =
+                        $inviterRows[0]['full_name']
+                        ?? $inviterRows[0]['email']
+                        ?? 'Unknown user';
+
+                    $invitation['inviter_email'] =
+                        $inviterRows[0]['email']
+                        ?? null;
+                }
+            }
+        }
+
+        unset($invitation);
+
+
+        // =====================================================
+        // VIEW
+        // =====================================================
+
         return view(
             'dashboard.users.edit',
             [
@@ -105,6 +244,9 @@ final class UserAdminController extends Controller
                     is_array($memberships)
                         ? $memberships
                         : [],
+
+                'invitations' =>
+                    $invitations,
             ]
         );
     }
@@ -389,22 +531,20 @@ final class UserAdminController extends Controller
             ]);
 
 
-        $existing =
+        // =====================================================
+        // GET ANY EXISTING COMPANY MEMBERSHIP
+        // =====================================================
+
+        $existingMembershipRows =
             $this->client
                 ->serviceSelect(
                     'company_members',
                     [
                         'select' =>
-                            'id',
+                            'id,company_id,user_id,role',
 
                         'user_id' =>
                             'eq.'.$id,
-
-                        'company_id' =>
-                            'eq.'
-                            .$validated[
-                                'company_id'
-                            ],
 
                         'limit' =>
                             1,
@@ -413,10 +553,41 @@ final class UserAdminController extends Controller
                 ->json();
 
 
+        $existingMembership =
+            is_array($existingMembershipRows)
+            && isset($existingMembershipRows[0])
+                ? $existingMembershipRows[0]
+                : null;
+
+
+        // =====================================================
+        // USER ALREADY BELONGS TO A DIFFERENT COMPANY
+        // =====================================================
+
         if (
-            is_array($existing)
+            $existingMembership !== null
+            && (
+                $existingMembership['company_id']
+                ?? null
+            ) !== $validated['company_id']
+        ) {
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'This user is already associated with another company and cannot join a second company.'
+                );
+        }
+
+
+        // =====================================================
+        // UPDATE EXISTING MEMBERSHIP ROLE
+        // =====================================================
+
+        if (
+            $existingMembership !== null
             && isset(
-                $existing[0]['id']
+                $existingMembership['id']
             )
         ) {
             $this->client
@@ -425,7 +596,7 @@ final class UserAdminController extends Controller
                     [
                         'id' =>
                             'eq.'
-                            .$existing[0]['id'],
+                            .$existingMembership['id'],
                     ],
                     [
                         'role' =>
@@ -436,6 +607,10 @@ final class UserAdminController extends Controller
                 );
 
         } else {
+            // =================================================
+            // CREATE NEW MEMBERSHIP
+            // =================================================
+
             $this->client
                 ->serviceInsert(
                     'company_members',

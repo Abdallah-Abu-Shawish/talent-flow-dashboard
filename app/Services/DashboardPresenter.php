@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\DashboardRepository;
+use App\Services\Supabase\Client;
 use App\Support\DashboardModules;
 use App\Support\SafeDisplay;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -12,7 +13,8 @@ use Illuminate\Support\Str;
 final class DashboardPresenter
 {
     public function __construct(
-        private DashboardRepository $repository
+        private DashboardRepository $repository,
+        private Client $client
     ) {}
 
 
@@ -1227,6 +1229,13 @@ final class DashboardPresenter
                 );
 
 
+            // Company invitations received by this user.
+            $sections[] =
+                $this->companyInvitations(
+                    $id
+                );
+
+
             // Related interviews.
             $sections[] =
                 $this->related(
@@ -1586,6 +1595,420 @@ final class DashboardPresenter
 
             'editLabel' =>
                 $editLabel,
+        ];
+    }
+
+
+    // =========================================================
+    // COMPANY INVITATIONS PREVIEW
+    // =========================================================
+
+    private function companyInvitations(
+        string $userId
+    ): array {
+        $response =
+            $this->client
+                ->serviceSelect(
+                    'company_invitations',
+                    [
+                        'select' =>
+                            'id,company_id,invited_user_id,role,status,invited_by,created_at,expires_at,responded_at',
+
+                        'invited_user_id' =>
+                            'eq.'.$userId,
+
+                        'order' =>
+                            'created_at.desc',
+
+                        'limit' =>
+                            5,
+                    ]
+                )
+                ->json();
+
+
+        $invitations =
+            is_array($response)
+                ? $response
+                : [];
+
+
+        // -----------------------------------------------------
+        // Load related companies in one request.
+        // -----------------------------------------------------
+
+        $companyIds =
+            array_values(
+                array_unique(
+                    array_filter(
+                        array_map(
+                            fn (array $invitation) =>
+                                $invitation[
+                                    'company_id'
+                                ]
+                                ?? null,
+                            $invitations
+                        ),
+                        fn ($value) =>
+                            is_string($value)
+                            && $value !== ''
+                    )
+                )
+            );
+
+
+        $companiesById = [];
+
+        if (! empty($companyIds)) {
+            $companyRows =
+                $this->client
+                    ->serviceSelect(
+                        'companies',
+                        [
+                            'select' =>
+                                'id,name',
+
+                            'id' =>
+                                'in.('
+                                .implode(
+                                    ',',
+                                    $companyIds
+                                )
+                                .')',
+                        ]
+                    )
+                    ->json();
+
+
+            if (is_array($companyRows)) {
+                foreach ($companyRows as $company) {
+                    $companyId =
+                        $company['id']
+                        ?? null;
+
+                    if (
+                        is_string($companyId)
+                        && $companyId !== ''
+                    ) {
+                        $companiesById[$companyId] =
+                            $company;
+                    }
+                }
+            }
+        }
+
+
+        // -----------------------------------------------------
+        // Load inviters in one request.
+        // -----------------------------------------------------
+
+        $inviterIds =
+            array_values(
+                array_unique(
+                    array_filter(
+                        array_map(
+                            fn (array $invitation) =>
+                                $invitation[
+                                    'invited_by'
+                                ]
+                                ?? null,
+                            $invitations
+                        ),
+                        fn ($value) =>
+                            is_string($value)
+                            && $value !== ''
+                    )
+                )
+            );
+
+
+        $invitersById = [];
+
+        if (! empty($inviterIds)) {
+            $inviterRows =
+                $this->client
+                    ->serviceSelect(
+                        'profiles',
+                        [
+                            'select' =>
+                                'id,full_name,email',
+
+                            'id' =>
+                                'in.('
+                                .implode(
+                                    ',',
+                                    $inviterIds
+                                )
+                                .')',
+                        ]
+                    )
+                    ->json();
+
+
+            if (is_array($inviterRows)) {
+                foreach ($inviterRows as $inviter) {
+                    $inviterId =
+                        $inviter['id']
+                        ?? null;
+
+                    if (
+                        is_string($inviterId)
+                        && $inviterId !== ''
+                    ) {
+                        $invitersById[$inviterId] =
+                            $inviter;
+                    }
+                }
+            }
+        }
+
+
+        // -----------------------------------------------------
+        // Normalize rows for the dashboard table component.
+        // -----------------------------------------------------
+
+        $rows = [];
+
+        foreach ($invitations as $invitation) {
+            $companyId =
+                $invitation['company_id']
+                ?? null;
+
+            $inviterId =
+                $invitation['invited_by']
+                ?? null;
+
+            $company =
+                is_string($companyId)
+                    ? ($companiesById[$companyId] ?? [])
+                    : [];
+
+            $inviter =
+                is_string($inviterId)
+                    ? ($invitersById[$inviterId] ?? [])
+                    : [];
+
+
+            $status =
+                (string) (
+                    $invitation['status']
+                    ?? 'unknown'
+                );
+
+
+            /*
+             * A pending invitation whose expiry time has passed
+             * is displayed as expired even if the stored row has
+             * not yet been normalized by another workflow.
+             */
+            if (
+                $status === 'pending'
+                && ! empty(
+                    $invitation[
+                        'expires_at'
+                    ]
+                )
+            ) {
+                try {
+                    if (
+                        Carbon::parse(
+                            (string) $invitation[
+                                'expires_at'
+                            ]
+                        )->isPast()
+                    ) {
+                        $status = 'expired';
+                    }
+                } catch (\Throwable) {
+                    // Keep the persisted status if parsing fails.
+                }
+            }
+
+
+            $role =
+                (string) (
+                    $invitation['role']
+                    ?? ''
+                );
+
+            $roleLabel =
+                match ($role) {
+                    'interviewer' =>
+                        'HR / Interviewer',
+
+                    'company_admin' =>
+                        'Company Admin',
+
+                    default =>
+                        $role !== ''
+                            ? Str::headline($role)
+                            : 'Unknown',
+                };
+
+
+            $inviterName =
+                trim(
+                    (string) (
+                        $inviter['full_name']
+                        ?? ''
+                    )
+                );
+
+            if ($inviterName === '') {
+                $inviterName =
+                    trim(
+                        (string) (
+                            $inviter['email']
+                            ?? 'Unknown user'
+                        )
+                    );
+            }
+
+
+            $links = [];
+
+            if (
+                is_string($companyId)
+                && Str::isUuid($companyId)
+            ) {
+                $links['company_name'] =
+                    route(
+                        'organizations.show',
+                        $companyId
+                    );
+            }
+
+            if (
+                is_string($inviterId)
+                && Str::isUuid($inviterId)
+            ) {
+                $links['inviter_name'] =
+                    route(
+                        'users.show',
+                        $inviterId
+                    );
+            }
+
+
+            $rows[] = [
+                'company_name' =>
+                    SafeDisplay::text(
+                        $company['name']
+                        ?? 'Unknown organization'
+                    ),
+
+                'inviter_name' =>
+                    SafeDisplay::text(
+                        $inviterName
+                    ),
+
+                'role_label' =>
+                    $roleLabel,
+
+                'status' =>
+                    $status,
+
+                'created_at' =>
+                    $this->formatDateTime(
+                        $invitation['created_at']
+                        ?? null
+                    ),
+
+                'expires_at' =>
+                    $this->formatDateTime(
+                        $invitation['expires_at']
+                        ?? null
+                    ),
+
+                'responded_at' =>
+                    $this->formatDateTime(
+                        $invitation['responded_at']
+                        ?? null
+                    ),
+
+                '_links' =>
+                    $links,
+            ];
+        }
+
+
+        $definition = [
+            'columns' => [
+                'company_name' =>
+                    'Organization',
+
+                'inviter_name' =>
+                    'Invited by',
+
+                'role_label' =>
+                    'Role',
+
+                'status' =>
+                    'Status',
+
+                'created_at' =>
+                    'Sent',
+
+                'expires_at' =>
+                    'Expires',
+
+                'responded_at' =>
+                    'Responded',
+            ],
+        ];
+
+
+        $table = [
+            'title' =>
+                'Company Invitations',
+
+            'description' =>
+                'Invitations received by this user to join an organization.',
+
+            'columns' =>
+                DashboardModules::columns(
+                    $definition
+                ),
+
+            'rows' =>
+                $rows,
+
+            'paginator' =>
+                new LengthAwarePaginator(
+                    $rows,
+                    count($rows),
+                    5,
+                    1
+                ),
+
+            'filters' =>
+                [],
+
+            'filterFields' =>
+                [],
+
+            'createUrl' =>
+                null,
+
+            'tabs' =>
+                [],
+
+            'collectionUrl' =>
+                null,
+
+            'note' =>
+                empty($rows)
+                    ? 'No company invitations have been received by this user.'
+                    : 'Showing up to 5 company invitations received by this user.',
+        ];
+
+
+        return [
+            'title' =>
+                'Company Invitations',
+
+            'table' =>
+                $table,
         ];
     }
 
