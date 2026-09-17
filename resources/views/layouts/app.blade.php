@@ -20,6 +20,8 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+
+
 </head>
 
 
@@ -146,52 +148,94 @@
                 </a>
 
 
-                {{-- ORGANIZATIONS --}}
-                <a
-                    href="{{ route('organizations.index') }}"
+                {{-- =================================================
+                     ORGANIZATIONS GROUP
+                ================================================== --}}
+
+                @php
+                    $organizationsActive =
+                        request()->routeIs('organizations.*');
+
+                    $companyRequestsActive =
+                        request()->routeIs('company-requests.*');
+
+                    $organizationsGroupActive =
+                        $organizationsActive
+                        || $companyRequestsActive;
+                @endphp
+
+
+                <div
                     @class([
-                        'nav-link',
-                        'active' => request()->routeIs('organizations.*'),
+                        'sidebar-nav-group',
+                        'active' => $organizationsGroupActive,
                     ])
-                    title="Organizations"
                 >
 
-                    <x-icon name="building" />
+                    {{-- ORGANIZATIONS --}}
+                    <a
+                        href="{{ route('organizations.index') }}"
+                        @class([
+                            'nav-link',
+                            'active' => $organizationsActive,
+                        ])
+                        title="Organizations"
+                        @if($organizationsActive)
+                            aria-current="page"
+                        @endif
+                    >
 
-                    <span class="sidebar-label">
-                        Organizations
-                    </span>
+                        <x-icon name="building" />
 
-                    <x-icon
-                        name="chevron"
-                        class="nav-chevron"
-                    />
+                        <span class="sidebar-label">
+                            Organizations
+                        </span>
 
-                </a>
+                        @if(! $companyRequestsActive)
+                            <x-icon
+                                name="chevron"
+                                class="nav-chevron"
+                            />
+                        @endif
+
+                    </a>
 
 
-                {{-- COMPANY REQUESTS --}}
-                <a
-                    href="{{ route('company-requests.index') }}"
-                    @class([
-                        'nav-link',
-                        'active' => request()->routeIs('company-requests.*'),
-                    ])
-                    title="Company Requests"
-                >
+                    {{-- COMPANY REQUESTS CHILD --}}
+                    <div class="sidebar-subnav sidebar-label">
 
-                    <x-icon name="building" />
+                        <a
+                            href="{{ route('company-requests.index') }}"
+                            @class([
+                                'sidebar-subnav-link',
+                                'active' => $companyRequestsActive,
+                            ])
+                            @if($companyRequestsActive)
+                                aria-current="page"
+                            @endif
+                        >
 
-                    <span class="sidebar-label">
-                        Company Requests
-                    </span>
+                            <span
+                                class="sidebar-subnav-node"
+                                aria-hidden="true"
+                            ></span>
 
-                    <x-icon
-                        name="chevron"
-                        class="nav-chevron"
-                    />
+                            <span>
+                                Company Requests
+                            </span>
 
-                </a>
+                            @if($companyRequestsActive)
+                                <x-icon
+                                    name="chevron"
+                                    class="sidebar-subnav-chevron"
+                                />
+                            @endif
+
+                        </a>
+
+                    </div>
+
+                </div>
 
 
                 {{-- USERS --}}
@@ -249,7 +293,6 @@
                         @class([
                             'nav-link',
                             'active' => $jobsActive,
-                            'nav-parent-active' => $jobCategoriesActive,
                         ])
                         title="Jobs"
                         @if($jobsActive)
@@ -263,10 +306,12 @@
                             Jobs
                         </span>
 
-                        <x-icon
-                            name="chevron"
-                            class="nav-chevron"
-                        />
+                        @if(! $jobCategoriesActive)
+                            <x-icon
+                                name="chevron"
+                                class="nav-chevron"
+                            />
+                        @endif
 
                     </a>
 
@@ -275,7 +320,7 @@
                     <div class="sidebar-subnav sidebar-label">
 
                         <a
-                            href="{{ url('/job-categories') }}"
+                            href="{{ route('job-categories.index') }}"
                             @class([
                                 'sidebar-subnav-link',
                                 'active' => $jobCategoriesActive,
@@ -294,10 +339,12 @@
                                 Job Categories
                             </span>
 
-                            <x-icon
-                                name="chevron"
-                                class="sidebar-subnav-chevron"
-                            />
+                            @if($jobCategoriesActive)
+                                <x-icon
+                                    name="chevron"
+                                    class="sidebar-subnav-chevron"
+                                />
+                            @endif
 
                         </a>
 
@@ -699,6 +746,8 @@
         </div>
 
     </dialog>
+
+
 
 </body>
 
