@@ -62,11 +62,22 @@ jobs:
           test -f public/build/manifest.json
           test -f startup.sh
           test -f default
+
+          # Android App Links
+          test -d public/.well-known
+          test -f public/.well-known/assetlinks.json
+
           echo "Laravel deployment verification passed."
+
           echo "Vite manifest:"
           ls -la public/build
+
           echo "Vendor directory exists:"
           ls -ld vendor
+
+          echo "Android asset links:"
+          ls -la public/.well-known
+          cat public/.well-known/assetlinks.json
 
       # =====================================================
       # Upload application artifact
@@ -75,12 +86,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: php-app
+
+          # IMPORTANT:
+          # Required so public/.well-known is included
+          include-hidden-files: true
+
           path: |
             .
-            !node_modules
-            !.git
+            !node_modules/**
+            !.git/**
+            !.github/**
             !.env
             !.env.*
+
           retention-days: 1
 
   deploy:
@@ -100,6 +118,15 @@ jobs:
         with:
           name: php-app
           path: .
+
+      # =====================================================
+      # Verify assetlinks survived artifact transfer
+      # =====================================================
+      - name: Verify Android App Links artifact
+        run: |
+          test -f public/.well-known/assetlinks.json
+          echo "assetlinks.json is included in deployment artifact."
+          cat public/.well-known/assetlinks.json
 
       # =====================================================
       # Azure authentication
