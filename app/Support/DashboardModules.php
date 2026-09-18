@@ -448,37 +448,52 @@ final class DashboardModules
             // COMPANY MEMBERS
             // =====================================================
 
-            'members' => [
-                'table' => 'company_members',
+          'members' => [
+    'table' =>
+        'company_members',
 
-                'title' => 'Organization Memberships',
+    'title' =>
+        'Organization Memberships',
 
-                'description' =>
-                    'Tenant authority is separate from the global profile role.',
+    'description' =>
+        'Tenant authority is separate from the global profile role.',
 
-                'select' =>
-    'id,company_id,user_id,role,created_at,company:companies(name),profile:profiles!company_members_user_id_fkey(full_name)',
+    'select' =>
+        'id,company_id,user_id,role,is_active,suspended_at,created_at,company:companies(name),profile:profiles!company_members_user_id_fkey(full_name)',
 
-                'statuses' => [
-                    'company_admin',
-                    'interviewer',
-                ],
+    'statuses' => [
+        'company_admin',
+        'interviewer',
+    ],
 
-                'statusField' => 'role',
+    'statusField' =>
+        'role',
 
-                'companyField' => 'company_id',
+    'companyField' =>
+        'company_id',
 
-                'columns' => [
-                    'full_name' => 'Member',
-                    'company_name' => 'Organization',
-                    'role' => 'Tenant role',
-                    'created_at' => 'Joined',
-                ],
+    'columns' => [
+        'full_name' =>
+            'Member',
 
-                'sorts' => [
-                    'created_at' => 'Newest',
-                ],
-            ],
+        'company_name' =>
+            'Organization',
+
+        'role' =>
+            'Tenant role',
+
+        'is_active' =>
+            'Status',
+
+        'created_at' =>
+            'Joined',
+    ],
+
+    'sorts' => [
+        'created_at' =>
+            'Newest',
+    ],
+],
         ];
 
 

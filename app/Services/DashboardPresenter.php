@@ -196,12 +196,12 @@ final class DashboardPresenter
 
             if ($key === 'is_active') {
                 $safe[$key] =
-                    filter_var(
-                        $value,
-                        FILTER_VALIDATE_BOOLEAN
-                    )
-                        ? 'Enabled'
-                        : 'Disabled';
+                filter_var(
+                    $value,
+                    FILTER_VALIDATE_BOOLEAN
+                )
+                    ? 'Active'
+                    : 'Suspended';
 
                 continue;
             }
