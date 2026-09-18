@@ -11,7 +11,7 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Controllers\JobCategoryController;
-
+use App\Http\Controllers\CompanyMemberNotificationController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -535,4 +535,19 @@ Route::post(
     ])
     ->name(
         'api.company-invitations.response-email'
+    );
+
+    Route::post(
+    '/api/company-member-actions/{id}/email',
+    [
+        CompanyMemberNotificationController::class,
+        'send',
+    ],
+)
+    ->whereUuid('id')
+    ->withoutMiddleware([
+        ValidateCsrfToken::class,
+    ])
+    ->name(
+        'api.company-member-actions.email'
     );
