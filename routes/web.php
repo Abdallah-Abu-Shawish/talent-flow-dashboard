@@ -6,7 +6,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\UserAdminController;
-
+use App\Http\Controllers\CompanyInvitationNotificationController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Controllers\JobCategoryController;
@@ -503,3 +504,19 @@ Route::get(
         );
     },
 );
+
+
+Route::post(
+    '/api/company-invitations/{id}/withdrawn-email',
+    [
+        CompanyInvitationNotificationController::class,
+        'withdrawn',
+    ],
+)
+    ->whereUuid('id')
+    ->withoutMiddleware([
+        ValidateCsrfToken::class,
+    ])
+    ->name(
+        'api.company-invitations.withdrawn-email'
+    );
