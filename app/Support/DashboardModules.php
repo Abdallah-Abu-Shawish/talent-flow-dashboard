@@ -457,7 +457,7 @@ final class DashboardModules
                     'Tenant authority is separate from the global profile role.',
 
                 'select' =>
-                    'id,company_id,user_id,role,created_at,company:companies(name),profile:profiles(full_name)',
+    'id,company_id,user_id,role,created_at,company:companies(name),profile:profiles!company_members_user_id_fkey(full_name)',
 
                 'statuses' => [
                     'company_admin',
