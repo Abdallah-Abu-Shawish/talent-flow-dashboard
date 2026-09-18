@@ -136,16 +136,38 @@ class CompanyInvitationController extends Controller
                     ]
                 );
 
-                $message =
-                    $error['message'] ??
-                    'Could not create the invitation.';
+                    $message =
+                $error['message'] ??
+                'Could not create the invitation.';
 
+            $lowerMessage =
+                strtolower($message);
+
+            // =========================================================
+            // 24-HOUR INVITATION COOLDOWN
+            // =========================================================
+
+            if (
+                str_contains(
+                    $lowerMessage,
+                    'invitation_24h_cooldown'
+                )
+            ) {
                 return response()->json([
                     'success' => false,
-                    'message' => $message,
-                ], $this->resolveRpcStatus(
-                    $rpcResponse->status()
-                ));
+                    'message' =>
+                        'You can’t send another invitation to this user within 24 hours. Please try again later.',
+                    'code' =>
+                        'INVITATION_24H_COOLDOWN',
+                ], 429);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], $this->resolveRpcStatus(
+                $rpcResponse->status()
+            ));
             }
 
 
