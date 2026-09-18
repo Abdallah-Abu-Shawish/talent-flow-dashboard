@@ -12,6 +12,7 @@ use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Controllers\JobCategoryController;
 
+
 use Illuminate\Support\Facades\Route;
 
 
@@ -519,4 +520,19 @@ Route::post(
     ])
     ->name(
         'api.company-invitations.withdrawn-email'
+    );
+
+    Route::post(
+    '/api/company-invitations/{id}/response-email',
+    [
+        CompanyInvitationNotificationController::class,
+        'responded',
+    ],
+)
+    ->whereUuid('id')
+    ->withoutMiddleware([
+        ValidateCsrfToken::class,
+    ])
+    ->name(
+        'api.company-invitations.response-email'
     );
