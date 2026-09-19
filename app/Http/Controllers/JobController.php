@@ -38,6 +38,11 @@ final class JobController extends Controller
                     $this->loadCategories(
                         $token
                     ),
+
+                'companies' =>
+                    $this->loadCompanies(
+                        $token
+                    ),
             ]
         );
     }
@@ -78,19 +83,13 @@ final class JobController extends Controller
                 ->get('admin.access_token');
 
 
-        /*
-         * Read the global job role directly.
-         *
-         * Do not use DashboardRepository::find()
-         * here because the edit form only needs
-         * the base job_roles fields.
-         */
         $rows =
             $this->client->select(
                 'job_roles',
                 [
                     'select' =>
-                        'id,category_id,title,slug,description,is_active,created_by,created_at,updated_at',
+                        'id,category_id,company_id,title,slug,description,is_active,created_by,created_at,updated_at,'
+                        .'creator:profiles!job_roles_created_by_fkey(full_name,email)',
 
                     'id' =>
                         'eq.'.$id,
@@ -118,6 +117,11 @@ final class JobController extends Controller
 
                 'categories' =>
                     $this->loadCategories(
+                        $token
+                    ),
+
+                'companies' =>
+                    $this->loadCompanies(
                         $token
                     ),
             ]
@@ -238,6 +242,36 @@ final class JobController extends Controller
                 [
                     'select' =>
                         'id,name,slug,is_active',
+
+                    'order' =>
+                        'name.asc',
+                ],
+                $token
+            )->json();
+
+
+        if (! is_array($rows)) {
+            throw new SupabaseException;
+        }
+
+
+        return $rows;
+    }
+
+
+    // =========================================================
+    // LOAD COMPANIES
+    // =========================================================
+
+    private function loadCompanies(
+        string $token
+    ): array {
+        $rows =
+            $this->client->select(
+                'companies',
+                [
+                    'select' =>
+                        'id,name,slug',
 
                     'order' =>
                         'name.asc',

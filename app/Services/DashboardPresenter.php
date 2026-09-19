@@ -120,11 +120,20 @@ final class DashboardPresenter
                 ),
 
             'createUrl' =>
-                $module === 'organizations'
-                    ? route(
-                        'organizations.create'
-                    )
-                    : null,
+                match ($module) {
+                    'organizations' =>
+                        route(
+                            'organizations.create'
+                        ),
+
+                    'jobs' =>
+                        route(
+                            'jobs.create'
+                        ),
+
+                    default =>
+                        null,
+                },
 
             'tabs' =>
                 $this->tabs(
@@ -147,12 +156,19 @@ final class DashboardPresenter
         $row['company_name'] =
             $row['company']['name']
             ?? (
-                $module === 'interviews'
+                $module === 'jobs'
                 && empty(
                     $row['company_id']
                 )
-                    ? 'Practice interview'
-                    : null
+                    ? 'Global / TalentFlow'
+                    : (
+                        $module === 'interviews'
+                        && empty(
+                            $row['company_id']
+                        )
+                            ? 'Practice interview'
+                            : null
+                    )
             );
 
 
@@ -165,6 +181,24 @@ final class DashboardPresenter
         // Global job role -> category.
         $row['category_name'] =
             $row['category']['name']
+            ?? null;
+
+
+        // Job role -> original creator.
+        $row['creator_name'] =
+            $row['creator']['full_name']
+            ?? $row['creator']['email']
+            ?? (
+                ! empty(
+                    $row['created_by']
+                    ?? null
+                )
+                    ? 'Unknown user'
+                    : 'Not recorded'
+            );
+
+        $row['creator_email'] =
+            $row['creator']['email']
             ?? null;
 
 
@@ -196,12 +230,12 @@ final class DashboardPresenter
 
             if ($key === 'is_active') {
                 $safe[$key] =
-                filter_var(
-                    $value,
-                    FILTER_VALIDATE_BOOLEAN
-                )
-                    ? 'Active'
-                    : 'Suspended';
+                    filter_var(
+                        $value,
+                        FILTER_VALIDATE_BOOLEAN
+                    )
+                        ? 'Enabled'
+                        : 'Disabled';
 
                 continue;
             }
@@ -1284,6 +1318,24 @@ final class DashboardPresenter
                         'category_name'
                     ]
                     ?? 'Not recorded',
+
+                'Organization' =>
+                    $row[
+                        'company_name'
+                    ]
+                    ?? 'Global / TalentFlow',
+
+                'Created by' =>
+                    $row[
+                        'creator_name'
+                    ]
+                    ?? 'Not recorded',
+
+                'Creator email' =>
+                    $row[
+                        'creator_email'
+                    ]
+                    ?? '—',
 
                 'Availability' =>
                     $row[

@@ -554,7 +554,9 @@ final class DashboardRepository
     // It does NOT modify job_postings.
     // =========================================================
 
-    public function saveJob(
+   // Replace ONLY the existing saveJob() method with this version.
+
+public function saveJob(
     array $data,
     ?string $id,
     string $token
@@ -562,10 +564,15 @@ final class DashboardRepository
     return $this->client->rpc(
         'dashboard_save_job_role',
         [
-            'p_job_role_id' => $id,
+            'p_job_role_id' =>
+                $id,
 
             'p_category_id' =>
                 $data['category_id'],
+
+            'p_company_id' =>
+                $data['company_id']
+                ?? null,
 
             'p_title' =>
                 $data['title'],
@@ -587,6 +594,7 @@ final class DashboardRepository
         $token
     );
 }
+
 
 
     // =========================================================

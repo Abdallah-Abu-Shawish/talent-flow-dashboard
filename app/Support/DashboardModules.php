@@ -99,8 +99,8 @@ final class DashboardModules
 
 
             // =====================================================
-            // GLOBAL JOB CATALOG
-            // job_roles = Jobs managed by Super Admin
+            // JOB ROLES
+            // job_roles = global or company-owned interview roles
             // =====================================================
 
             'jobs' => [
@@ -109,11 +109,12 @@ final class DashboardModules
                 'title' => 'Jobs',
 
                 'description' =>
-                    'Manage the global job catalog used across the TalentFlow platform.',
+                    'Manage global and company-specific job roles used across the TalentFlow platform.',
 
                 'select' =>
                     'id,'
                     .'category_id,'
+                    .'company_id,'
                     .'title,'
                     .'slug,'
                     .'description,'
@@ -121,7 +122,9 @@ final class DashboardModules
                     .'created_by,'
                     .'created_at,'
                     .'updated_at,'
-                    .'category:job_categories!job_roles_category_id_fkey(name,is_active)',
+                    .'category:job_categories!job_roles_category_id_fkey(name,is_active),'
+                    .'company:companies!job_roles_company_id_fkey(name,slug),'
+                    .'creator:profiles!job_roles_created_by_fkey(full_name,email)',
 
                 'search' => [
                     'title',
@@ -139,6 +142,9 @@ final class DashboardModules
                 'statusField' =>
                     'is_active',
 
+                'companyField' =>
+                    'company_id',
+
                 'columns' => [
                     'title' =>
                         'Job',
@@ -146,8 +152,11 @@ final class DashboardModules
                     'category_name' =>
                         'Category',
 
-                    'slug' =>
-                        'Slug',
+                    'company_name' =>
+                        'Organization',
+
+                    'creator_name' =>
+                        'Created by',
 
                     'is_active' =>
                         'Availability',
@@ -336,7 +345,7 @@ final class DashboardModules
                 'title' => 'Dashboard Actions',
 
                 'description' =>
-                    'Committed organization commands with actor attribution and the administrator’s reason.',
+                    'Committed organization commands with actor attribution and the administratorâ€™s reason.',
 
                 'select' =>
                     'id,actor_id,company_id,action,reason,created_at',

@@ -20,6 +20,35 @@
         ?? ''
     );
 
+    $selectedCompany = old(
+        'company_id',
+        $job['company_id']
+        ?? ''
+    );
+
+    $creator =
+        is_array(
+            $job['creator']
+            ?? null
+        )
+            ? $job['creator']
+            : null;
+
+    $creatorName =
+        $creator['full_name']
+        ?? null;
+
+    $creatorEmail =
+        $creator['email']
+        ?? null;
+
+    $creatorDisplay =
+        $creatorName
+        ?: (
+            $creatorEmail
+            ?: 'Not recorded'
+        );
+
     $isActive =
         (bool) old(
             'is_active',
@@ -33,7 +62,7 @@
     :title="$isEditing
         ? 'Edit Job'
         : 'Create Job'"
-    description="Create and manage jobs in the global TalentFlow job catalog."
+    description="Create and manage global or company-specific job roles used across TalentFlow."
 >
     <a
         class="button button-secondary"
@@ -111,7 +140,7 @@
                 </h2>
 
                 <p>
-                    Global job catalog
+                    Job role settings
                 </p>
 
             </div>
@@ -156,7 +185,7 @@
                 >
 
                 <p class="field-hint">
-                    Enter the global job role name.
+                    Enter the job role name.
                 </p>
 
 
@@ -262,6 +291,74 @@
             </div>
 
 
+
+
+            {{-- =================================================
+                 COMPANY / OWNERSHIP
+            ================================================== --}}
+
+            <div class="form-field">
+
+                <label for="company_id">
+                    Company / ownership
+                </label>
+
+                <select
+                    id="company_id"
+                    name="company_id"
+
+                    @error('company_id')
+                        aria-invalid="true"
+                        aria-describedby="company-error"
+                    @enderror
+                >
+
+                    <option value="">
+                        Global / TalentFlow
+                    </option>
+
+                    @foreach($companies as $company)
+
+                        <option
+                            value="{{ $company['id'] }}"
+                            @selected(
+                                $selectedCompany
+                                ===
+                                $company['id']
+                            )
+                        >
+                            {{ $company['name'] }}
+
+                            @if(! empty($company['slug']))
+                                — {{ $company['slug'] }}
+                            @endif
+                        </option>
+
+                    @endforeach
+
+                </select>
+
+
+                <p class="field-hint">
+                    Leave this as Global / TalentFlow for a platform-wide role.
+                    Select a company when this job should belong only to that company.
+                </p>
+
+
+                @error('company_id')
+
+                    <p
+                        id="company-error"
+                        class="field-error"
+                    >
+                        {{ $message }}
+                    </p>
+
+                @enderror
+
+            </div>
+
+
             {{-- =================================================
                  DESCRIPTION
             ================================================== --}}
@@ -292,9 +389,8 @@
 
 
                 <p class="field-hint">
-                    Optional description of the global job role.
-                    This is separate from the company-specific job
-                    description used during an AI interview.
+                    Optional description of this job role.
+                    It can provide context when the role is used in interview workflows.
                 </p>
 
 
@@ -310,6 +406,44 @@
                 @enderror
 
             </div>
+
+
+
+
+            {{-- =================================================
+                 CREATED BY
+            ================================================== --}}
+
+            @if($isEditing)
+
+                <div class="form-field">
+
+                    <label>
+                        Created by
+                    </label>
+
+                    <input
+                        type="text"
+                        value="{{ $creatorDisplay }}"
+                        disabled
+                    >
+
+                    @if(
+                        ! empty($creatorEmail)
+                        && $creatorEmail !== $creatorDisplay
+                    )
+                        <p class="field-hint">
+                            {{ $creatorEmail }}
+                        </p>
+                    @else
+                        <p class="field-hint">
+                            The original creator is preserved when this job is edited.
+                        </p>
+                    @endif
+
+                </div>
+
+            @endif
 
 
             {{-- =================================================
@@ -416,12 +550,13 @@
 
 
         <h2>
-            Global job catalog
+            Job ownership
         </h2>
 
         <p>
-            Jobs created here are global roles managed by
-            TalentFlow and are not owned by a specific company.
+            A job can be global across TalentFlow or assigned
+            to one specific company. Company ownership can be
+            changed later by a Super Admin.
         </p>
 
 
@@ -460,13 +595,13 @@
 
 
         <h3>
-            Interview job description
+            Created by
         </h3>
 
         <p>
-            Company-specific job descriptions remain separate
-            and are stored in job postings for use by the
-            AI interview system.
+            TalentFlow keeps the original creator of each job.
+            Editing the job or changing its company does not
+            replace that creator.
         </p>
 
 

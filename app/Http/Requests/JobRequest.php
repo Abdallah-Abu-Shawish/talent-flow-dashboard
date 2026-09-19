@@ -19,6 +19,11 @@ final class JobRequest extends FormRequest
                 'uuid',
             ],
 
+            'company_id' => [
+                'nullable',
+                'uuid',
+            ],
+
             'title' => [
                 'required',
                 'string',
@@ -52,6 +57,9 @@ final class JobRequest extends FormRequest
 
             'category_id.uuid' =>
                 'The selected job category is invalid.',
+
+            'company_id.uuid' =>
+                'The selected company is invalid.',
 
             'title.required' =>
                 'Job title is required.',
